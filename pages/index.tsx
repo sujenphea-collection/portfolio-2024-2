@@ -4,6 +4,8 @@ import { BufferGeometry, Group, Mesh } from "three"
 import { Three } from "../src/experience/Three"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
 import stageVert from "../src/shaders/stage/stageVert.glsl"
+import screenFrag from "../src/shaders/screen/screenFrag.glsl"
+import screenVert from "../src/shaders/screen/screenVert.glsl"
 import { ItemType, Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
@@ -21,7 +23,8 @@ type ExperienceRef = {
 /* -------------------------------------------------------------------------- */
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
-  const stageGeometryRef = useRef<BufferGeometry | null>(null)
+  const floorGeometryRef = useRef<BufferGeometry | null>(null)
+  const screenGeometryRef = useRef<BufferGeometry | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -31,7 +34,19 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         group.traverse((item) => {
           if (item.type === "Mesh") {
             const mesh = item as Mesh
-            stageGeometryRef.current = mesh.geometry as BufferGeometry
+            floorGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/screen.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            screenGeometryRef.current = mesh.geometry as BufferGeometry
           }
         })
       },
@@ -46,9 +61,15 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
-      <group>
-        <mesh position={[0, -1.8, -30]} geometry={stageGeometryRef.current ?? undefined}>
+      <group position={[0, -1.8, -30]}>
+        {/* floor */}
+        <mesh geometry={floorGeometryRef.current ?? undefined}>
           <shaderMaterial vertexShader={stageVert} fragmentShader={stageFrag} />
+        </mesh>
+
+        {/* screen */}
+        <mesh geometry={screenGeometryRef.current ?? undefined}>
+          <shaderMaterial vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
       </group>
     )
@@ -58,6 +79,7 @@ Stage.displayName = "Stage"
 
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
+  /* ---------------------------------- refs ---------------------------------- */
   const stageRef = useRef<ExperienceRef | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
