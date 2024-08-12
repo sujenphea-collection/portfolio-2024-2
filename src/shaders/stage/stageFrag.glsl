@@ -1,3 +1,48 @@
+varying vec3 v_worldPosition;
+
+/* -------------------------------------------------------------------------- */
+/*                                    utils                                   */
+/* -------------------------------------------------------------------------- */
+// ref: https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8
+float pristineGrid(in vec2 uv, vec2 lineWidth) {
+  vec2 ddx = dFdx(uv);
+  vec2 ddy = dFdy(uv);
+
+  vec2 uvDeriv = vec2(length(vec2(ddx.x, ddy.x)), length(vec2(ddx.y, ddy.y)));
+
+  bool invertLineX = lineWidth.x > 0.5;
+  bool invertLineY = lineWidth.y > 0.5;
+
+  float targetWidthX = invertLineX ? 1.0 - lineWidth.x : lineWidth.x;
+  float targetWidthY = invertLineY ? 1.0 - lineWidth.y : lineWidth.y;
+  vec2 targetWidth = vec2(targetWidthX, targetWidthY);
+  vec2 drawWidth = clamp(targetWidth, uvDeriv, vec2(0.5));
+
+  vec2 lineAA = uvDeriv * 1.5;
+
+  vec2 gridUV = abs(fract(uv) * 2.0 - 1.0);
+  gridUV.x = invertLineX ? gridUV.x : 1.0 - gridUV.x;
+  gridUV.y = invertLineY ? gridUV.y : 1.0 - gridUV.y;
+
+  vec2 grid2 = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
+  grid2 *= clamp(targetWidth / drawWidth, 0.0, 1.0);
+  grid2 = mix(grid2, targetWidth, clamp(uvDeriv * 2.0 - 1.0, 0.0, 1.0));
+  grid2.x = invertLineX ? 1.0 - grid2.x : grid2.x;
+  grid2.y = invertLineY ? 1.0 - grid2.y : grid2.y;
+
+  return mix(grid2.x, 1.0, grid2.y);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    main                                    */
+/* -------------------------------------------------------------------------- */
 void main() {
-  gl_FragColor = vec4(1., 0., 0., 1.);
+  float grid = pristineGrid(v_worldPosition.xz, vec2(0.02));
+  vec3 gridColor = vec3(0.2) * grid;
+
+  // get color
+  vec3 color = gridColor;
+
+  // set color
+  gl_FragColor = vec4(color, 1.);
 }
