@@ -68,7 +68,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh geometry={groundGeometryRef.current ?? undefined} position={[0, 0.1, 0]}>
+        <mesh geometry={groundGeometryRef.current ?? undefined}>
           <meshBasicMaterial map={floorBakedTexture.current} />
         </mesh>
       </group>
