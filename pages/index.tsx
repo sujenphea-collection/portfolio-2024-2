@@ -25,6 +25,7 @@ type ExperienceRef = {
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
+  const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
   const screenGeometryRef = useRef<BufferGeometry | null>(null)
 
   const floorUniforms = useRef({
@@ -42,6 +43,18 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           if (item.type === "Mesh") {
             const mesh = item as Mesh
             floorGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/stageBox.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            floorBoxGeometryRef.current = mesh.geometry as BufferGeometry
           }
         })
       },
@@ -91,6 +104,10 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       <group position={[0, -1.8, -30]}>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined}>
+          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
+        </mesh>
+
+        <mesh geometry={floorBoxGeometryRef.current ?? undefined}>
           <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
         </mesh>
 
