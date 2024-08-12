@@ -58,8 +58,8 @@ module.exports = {
         ],
       },
       colors: {
-        bgColor: "hsla(0, 0%, 100%, 1)",
-        contentColor: "hsla(0, 0%, 0%, 1)",
+        bgColor: "hsla(0, 0%, 0%, 1)",
+        contentColor: "hsla(0, 0%, 100%, 1)",
       },
     },
   },

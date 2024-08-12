@@ -23,8 +23,38 @@ type ExperienceRef = {
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
 const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  // load
+  const floorBakedTexture = useRef<Texture | null>(null)
+
+  // scene
+  const groundGeometryRef = useRef<BufferGeometry | null>(null)
+
   /* -------------------------------- functions ------------------------------- */
-  const loadItems = () => {}
+  const loadItems = (loader: Loader) => {
+    loader.add("/models/ground.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            groundGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/textures/floor-baked.jpg", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.minFilter = LinearFilter
+        tex.magFilter = LinearFilter
+
+        floorBakedTexture.current = tex
+      },
+    })
+  }
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
@@ -38,9 +68,8 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh rotation={[Math.PI * -0.5, 0, 0]}>
-          <planeGeometry args={[10, 10]} />
-          <meshBasicMaterial />
+        <mesh geometry={groundGeometryRef.current ?? undefined} position={[0, 0.1, 0]}>
+          <meshBasicMaterial map={floorBakedTexture.current} />
         </mesh>
       </group>
     )
@@ -128,7 +157,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
-      <group scale={[0.1, 0.1, 0.1]}>
+      <group>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined}>
           <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
