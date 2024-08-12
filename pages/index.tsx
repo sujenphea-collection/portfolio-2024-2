@@ -22,6 +22,32 @@ type ExperienceRef = {
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
+const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = () => {}
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItmes: loadItems,
+  }))
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {})
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <mesh rotation={[Math.PI * -0.5, 0, 0]}>
+          <planeGeometry args={[10, 10]} />
+          <meshBasicMaterial />
+        </mesh>
+      </group>
+    )
+  )
+})
+Ground.displayName = "Ground"
+
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
@@ -29,6 +55,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const screenGeometryRef = useRef<BufferGeometry | null>(null)
 
   const floorUniforms = useRef({
+    u_scale: { value: 0.1 },
+
+    // noise
     u_noiseTexture: { value: null as Texture | null },
     u_noiseTexelSize: { value: new Vector2() },
     u_noiseCoordOffset: { value: new Vector2() },
@@ -94,14 +123,12 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
-    // floorUniforms.current.u_noiseCoordOffset.value.set(Math.random(), Math.random())
-  })
+  useFrame(() => {})
 
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
-      <group position={[0, -1.8, -30]}>
+      <group scale={[0.1, 0.1, 0.1]}>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined}>
           <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
@@ -124,17 +151,20 @@ Stage.displayName = "Stage"
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
     // resize scenes
+    groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
+    groundRef.current?.loadItmes(props.loader)
     stageRef.current?.loadItmes(props.loader)
 
     props.preinitComplete()
@@ -156,6 +186,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   return (
     <>
       {/* scene */}
+      <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
     </>
   )

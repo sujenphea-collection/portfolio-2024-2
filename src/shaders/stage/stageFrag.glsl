@@ -1,3 +1,6 @@
+uniform float u_scale;
+
+// noise
 uniform sampler2D u_noiseTexture;
 uniform vec2 u_noiseTexelSize;
 uniform vec2 u_noiseCoordOffset;
@@ -48,12 +51,12 @@ void main() {
   // get grid color
   vec3 color = vec3(0.0);
 
-  float grid = pristineGrid(v_worldPosition.xz, vec2(0.02));
+  float grid = pristineGrid(v_worldPosition.xz * vec2(1.0 / u_scale), vec2(0.02));
   vec3 gridColor = vec3(0.2) * grid;
   color = gridColor;
 
   // add noise
-  vec3 noise = getNoise(gl_FragCoord.xy * vec2(0.3));
+  vec3 noise = getNoise(gl_FragCoord.xy * vec2(1.0));
   vec3 noiseColor = vec3(0.1) * noise.r;
   color += noiseColor;
 
