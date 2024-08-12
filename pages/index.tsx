@@ -1,34 +1,95 @@
-import { Box } from "@react-three/drei"
 import gsap from "gsap"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { BufferGeometry, Group, Mesh } from "three"
 import { Three } from "../src/experience/Three"
-import { Loader } from "../src/utils/loader"
+import { ItemType, Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
 /* -------------------------------------------------------------------------- */
+/*                                    types                                   */
+/* -------------------------------------------------------------------------- */
+type ExperienceRef = {
+  loadItmes: (loader: Loader) => void
+  resize?: (width: number, height: number) => void
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
+const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const stageGeometryRef = useRef<BufferGeometry | null>(null)
+
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = (loader: Loader) => {
+    loader.add("/models/stage.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            stageGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+  }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItmes: loadItems,
+  }))
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <mesh position={[0, -1.8, -30]} geometry={stageGeometryRef.current ?? undefined}>
+          <meshBasicMaterial />
+        </mesh>
+      </group>
+    )
+  )
+})
+Stage.displayName = "Stage"
+
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
+  const stageRef = useRef<ExperienceRef | null>(null)
+
+  /* -------------------------------- functions ------------------------------- */
+  const resize = () => {
+    // resize scenes
+    stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
+  }
+
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
-    // props.loader.add("./textures/concrete/concrete_floor_worn_001_arm_1k.jpg", ItemType.Texture)
+    stageRef.current?.loadItmes(props.loader)
 
     props.preinitComplete()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // resize
+  useEffect(() => {
+    window.addEventListener("resize", resize)
+    resize()
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    }
+  }, [])
+
   /* ---------------------------------- main ---------------------------------- */
   return (
-    props.show && (
-      <>
-        {/* scene */}
-        <Box />
-      </>
-    )
+    <>
+      {/* scene */}
+      <Stage ref={stageRef} show={props.show} />
+    </>
   )
 }
 
