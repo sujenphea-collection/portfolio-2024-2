@@ -2,6 +2,8 @@ import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { BufferGeometry, Group, Mesh } from "three"
 import { Three } from "../src/experience/Three"
+import stageFrag from "../src/shaders/stage/stageFrag.glsl"
+import stageVert from "../src/shaders/stage/stageVert.glsl"
 import { ItemType, Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
@@ -46,7 +48,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     props.show && (
       <group>
         <mesh position={[0, -1.8, -30]} geometry={stageGeometryRef.current ?? undefined}>
-          <meshBasicMaterial />
+          <shaderMaterial vertexShader={stageVert} fragmentShader={stageFrag} />
         </mesh>
       </group>
     )
