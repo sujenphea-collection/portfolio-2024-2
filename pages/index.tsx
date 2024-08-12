@@ -1,11 +1,12 @@
+import { useFrame } from "@react-three/fiber"
 import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
-import { BufferGeometry, Group, Mesh } from "three"
+import { BufferGeometry, Group, LinearFilter, Mesh, RepeatWrapping, Texture, Vector2 } from "three"
 import { Three } from "../src/experience/Three"
-import stageFrag from "../src/shaders/stage/stageFrag.glsl"
-import stageVert from "../src/shaders/stage/stageVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
+import stageFrag from "../src/shaders/stage/stageFrag.glsl"
+import stageVert from "../src/shaders/stage/stageVert.glsl"
 import { ItemType, Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
@@ -25,6 +26,12 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const screenGeometryRef = useRef<BufferGeometry | null>(null)
+
+  const floorUniforms = useRef({
+    u_noiseTexture: { value: null as Texture | null },
+    u_noiseTexelSize: { value: new Vector2() },
+    u_noiseCoordOffset: { value: new Vector2() },
+  })
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -51,6 +58,21 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         })
       },
     })
+
+    loader.add("/textures/noise.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+
+        tex.generateMipmaps = false
+        tex.minFilter = LinearFilter
+        tex.magFilter = LinearFilter
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        floorUniforms.current.u_noiseTexture.value = tex
+        floorUniforms.current.u_noiseTexelSize.value.set(1 / 128, 1 / 128)
+      },
+    })
   }
 
   /* --------------------------------- handle --------------------------------- */
@@ -58,13 +80,18 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     loadItmes: loadItems,
   }))
 
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {
+    // floorUniforms.current.u_noiseCoordOffset.value.set(Math.random(), Math.random())
+  })
+
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
       <group position={[0, -1.8, -30]}>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined}>
-          <shaderMaterial vertexShader={stageVert} fragmentShader={stageFrag} />
+          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
         </mesh>
 
         {/* screen */}
