@@ -92,6 +92,10 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_noiseCoordOffset: { value: new Vector2() },
   })
 
+  const screenUniforms = useRef({
+    u_texture: { value: null as Texture | null },
+  })
+
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
     loader.add("/models/stage.obj", ItemType.Obj, {
@@ -144,6 +148,16 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         floorUniforms.current.u_noiseTexelSize.value.set(1 / 128, 1 / 128)
       },
     })
+
+    loader.add("/projects/balance.mp4", ItemType.VideoTexture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.userData.video.play()
+        tex.userData.video.loop = true
+
+        screenUniforms.current.u_texture.value = tex
+      },
+    })
   }
 
   /* --------------------------------- handle --------------------------------- */
@@ -169,7 +183,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
         {/* screen */}
         <mesh geometry={screenGeometryRef.current ?? undefined}>
-          <shaderMaterial vertexShader={screenVert} fragmentShader={screenFrag} />
+          <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
       </group>
     )
