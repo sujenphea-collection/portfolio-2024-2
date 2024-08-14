@@ -59,9 +59,12 @@ void main() {
 
   vec3 color = vec3(red, green, blue);
 
-  // get scanline
+  // add scanline
   float scanline = sin(v_uv.y * 1000.0) * 0.01;
   color += scanline;
+
+  // add static
+  color -= noise(v_uv * 1000.0 * noise(vec2(u_time * 100.0))) * 0.05;
 
   // set color
   gl_FragColor = vec4(color, 1.);
