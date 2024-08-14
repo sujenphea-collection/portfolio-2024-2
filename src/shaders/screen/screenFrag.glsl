@@ -6,10 +6,6 @@ varying vec2 v_uv;
 /* -------------------------------------------------------------------------- */
 /*                                    utils                                   */
 /* -------------------------------------------------------------------------- */
-float rand(vec2 xy) {
-  return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
 // 2D Random
 float random(in vec2 st) {
   return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
@@ -45,12 +41,16 @@ void main() {
   float offsetX = noise(vec2(u_time * 10.0, v_uv.y * 100.0)) * 0.003
                   + noise(vec2(u_time * 5.0, v_uv * 20.0)) * 0.005;
 
+  float offsetY = (step(noise(vec2(u_time * 3.0, 5.0)), 0.2))
+                  * (sin(u_time) - 0.5) * 2.0
+                  * 0.01;
+
   // get sandy
-  float sandy = rand(v_uv) * sin(u_time * 1.0) * 0.005;
+  float sandy = random(v_uv) * sin(u_time * 1.0) * 0.005;
 
   // get texture
   float x = v_uv.x + offsetX + sandy;
-  float y = v_uv.y;
+  float y = v_uv.y + offsetY;
   float colorShift = 0.003;
 
   float red = texture(u_texture, vec2(x - colorShift, y)).r;
