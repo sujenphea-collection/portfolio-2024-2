@@ -5,6 +5,8 @@ import { useRouter } from "next/router"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { BufferGeometry, Euler, Group, LinearFilter, Mesh, Quaternion, RepeatWrapping, Texture, Vector2 } from "three"
 import { Three } from "../src/experience/Three"
+import groundFrag from "../src/shaders/ground/groundFrag.glsl"
+import groundVert from "../src/shaders/ground/groundVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
@@ -46,6 +48,10 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   // scene
   const groundGeometryRef = useRef<BufferGeometry | null>(null)
 
+  const groundUniforms = useRef({
+    u_texture: { value: null as Texture | null },
+  })
+
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
     loader.add("/models/ground.obj", ItemType.Obj, {
@@ -68,6 +74,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.magFilter = LinearFilter
 
         floorBakedTexture.current = tex
+        groundUniforms.current.u_texture.value = tex
       },
     })
   }
@@ -85,7 +92,12 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     props.show && (
       <group>
         <mesh geometry={groundGeometryRef.current ?? undefined}>
-          <meshBasicMaterial map={floorBakedTexture.current} />
+          <shaderMaterial
+            uniforms={groundUniforms.current}
+            vertexShader={groundVert}
+            fragmentShader={groundFrag}
+            transparent
+          />
         </mesh>
       </group>
     )
