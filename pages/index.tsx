@@ -1,7 +1,9 @@
-import { useFrame } from "@react-three/fiber"
+import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
+import Link from "next/link"
+import { useRouter } from "next/router"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
-import { BufferGeometry, Group, LinearFilter, Mesh, RepeatWrapping, Texture, Vector2 } from "three"
+import { BufferGeometry, Euler, Group, LinearFilter, Mesh, Quaternion, RepeatWrapping, Texture, Vector2 } from "three"
 import { Three } from "../src/experience/Three"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
@@ -17,6 +19,20 @@ import { cn } from "../src/utils/utils"
 type ExperienceRef = {
   loadItmes: (loader: Loader) => void
   resize?: (width: number, height: number) => void
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  constants                                 */
+/* -------------------------------------------------------------------------- */
+const CameraPositions = {
+  intro: {
+    position: { x: -6.159406959102013, y: 5.536282269022624, z: 6.587827968025041 },
+    rotation: { x: -0.7681781572206483, y: -0.7423109188375244, z: -0.5785537424927941 },
+  },
+  projects: {
+    position: { x: -0.41792582937172246, y: 0.9159469228548319, z: 2.11393571000216 },
+    rotation: { x: -0.09631061435150774, y: 0.0023820586763996427, z: 0.00023012929333132985 },
+  },
 }
 
 /* -------------------------------------------------------------------------- */
@@ -196,9 +212,19 @@ Stage.displayName = "Stage"
 
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
+  const { camera } = useThree()
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
+  // ui
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
+
+  // params
+  const cameraParams = useRef({ position: CameraPositions.intro.position, rotation: CameraPositions.intro.rotation })
+  const currQuaternion = useRef(new Quaternion())
+  const endQuaternion = useRef(new Quaternion())
+  const tempEuler = useRef(new Euler())
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -206,6 +232,15 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {
+    // update camera
+    camera.position.lerp(cameraParams.current.position, 0.1)
+
+    currQuaternion.current.slerp(endQuaternion.current, 0.1)
+    camera.quaternion.copy(currQuaternion.current)
+  })
 
   /* --------------------------------- effects -------------------------------- */
   // load materials
@@ -227,6 +262,36 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       window.removeEventListener("resize", resize)
     }
   }, [])
+
+  // setup camera
+  useEffect(() => {
+    camera.position.copy(cameraParams.current.position)
+    camera.rotation.set(
+      cameraParams.current.rotation.x,
+      cameraParams.current.rotation.y,
+      cameraParams.current.rotation.z
+    )
+    camera.updateProjectionMatrix()
+    currQuaternion.current.copy(camera.quaternion)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // update route
+  useEffect(() => {
+    if (asPath === "/projects") {
+      cameraParams.current.position = CameraPositions.projects.position
+      cameraParams.current.rotation = CameraPositions.projects.rotation
+    } else {
+      cameraParams.current.position = CameraPositions.intro.position
+      cameraParams.current.rotation = CameraPositions.intro.rotation
+    }
+
+    // update end rotation
+    const rotation = cameraParams.current.rotation
+    tempEuler.current.set(rotation.x, rotation.y, rotation.z)
+    endQuaternion.current.setFromEuler(tempEuler.current)
+  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -375,6 +440,18 @@ export default function Home() {
 
       {/* loader */}
       <Preloader loader={loader.current} startLoader={startLoader} onDismiss={() => setShow(true)} />
+
+      {/* content */}
+      <div className="relative">
+        <div className={cn("fixed right-10 top-10", "flex flex-col")}>
+          <Link href="/projects" className="bg-white text-black">
+            To Projects
+          </Link>
+          <Link href="/" className="bg-white text-black">
+            To Home
+          </Link>
+        </div>
+      </div>
     </>
   )
 }
