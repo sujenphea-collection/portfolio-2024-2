@@ -94,6 +94,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   const screenUniforms = useRef({
     u_texture: { value: null as Texture | null },
+    u_time: { value: 0 },
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -166,7 +167,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {})
+  useFrame((_, delta) => {
+    screenUniforms.current.u_time.value += delta
+  })
 
   /* ---------------------------------- main ---------------------------------- */
   return (
