@@ -19,7 +19,7 @@ import { cn } from "../src/utils/utils"
 /*                                    types                                   */
 /* -------------------------------------------------------------------------- */
 type ExperienceRef = {
-  loadItmes: (loader: Loader) => void
+  loadItems: (loader: Loader) => void
   resize?: (width: number, height: number) => void
 }
 
@@ -81,7 +81,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
-    loadItmes: loadItems,
+    loadItems,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -191,7 +191,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
-    loadItmes: loadItems,
+    loadItems,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -257,8 +257,8 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
-    groundRef.current?.loadItmes(props.loader)
-    stageRef.current?.loadItmes(props.loader)
+    groundRef.current?.loadItems(props.loader)
+    stageRef.current?.loadItems(props.loader)
 
     props.preinitComplete()
 
