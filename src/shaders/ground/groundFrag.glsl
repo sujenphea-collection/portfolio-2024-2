@@ -26,6 +26,7 @@ void main() {
 	#include <logdepthbuf_fragment>
   
   vec3 color = vec3(0.0);
+  float mask = texture2D(u_maskTexture, v_uv2).r;
 
   // get shadow alpha
   vec3 shadows = texture2D(u_shadowTexture, v_uv2).rgb;
@@ -33,15 +34,15 @@ void main() {
   color = vec3(alpha);
 
   // get reflection
-  vec4 base = texture2DProj(u_texture, v_uv);
+  vec4 uvOffset = vec4(mask * 0.0, 0.0, 0.0, mask * 0.2);
+  vec4 base = texture2DProj(u_texture, v_uv + uvOffset);
   color += base.rgb;
   
   // color overlay
   color = blendOverlay(color, u_color);
 
   // dirt
-  float dirt = texture2D(u_maskTexture, v_uv2).r;
-  color *= dirt;
+  color *= mask;
 
   // apply color
   gl_FragColor = vec4(color, 1.0);

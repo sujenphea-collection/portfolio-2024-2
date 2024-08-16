@@ -244,6 +244,14 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     gl.setRenderTarget(renderTarget.current)
 
+    // hide unshown things
+    scene.traverse((obj) => {
+      if (!(obj.userData.reflect ?? true)) {
+        // eslint-disable-next-line no-param-reassign
+        obj.visible = false
+      }
+    })
+
     gl.render(scene, reflectorParams.current.virtualCamera)
     gl.setRenderTarget(null)
 
@@ -252,6 +260,14 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     gl.xr.enabled = currentXrEnabled
     // eslint-disable-next-line no-param-reassign
     gl.shadowMap.autoUpdate = currentShadowautoUpdate
+
+    // restore unshown things
+    scene.traverse((obj) => {
+      if (!(obj.userData.reflect ?? true)) {
+        // eslint-disable-next-line no-param-reassign
+        obj.visible = true
+      }
+    })
 
     gl.setRenderTarget(currentRenderTarget)
   }
@@ -385,11 +401,11 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     props.show && (
       <group>
         {/* floor */}
-        <mesh geometry={floorGeometryRef.current ?? undefined}>
+        <mesh geometry={floorGeometryRef.current ?? undefined} userData={{ reflect: false }}>
           <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
         </mesh>
 
-        <mesh geometry={floorBoxGeometryRef.current ?? undefined}>
+        <mesh geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
           <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
         </mesh>
 
