@@ -1,6 +1,7 @@
 uniform vec3 u_color;
 uniform sampler2D u_texture;
-uniform sampler2D u_shadows;
+uniform sampler2D u_shadowTexture;
+uniform sampler2D u_maskTexture;
 
 varying vec4 v_uv;
 varying vec2 v_uv2;
@@ -27,15 +28,23 @@ void main() {
   vec3 color = vec3(0.0);
 
   // get shadow alpha
-  vec3 shadows = texture2D(u_shadows, v_uv2).rgb;
+  vec3 shadows = texture2D(u_shadowTexture, v_uv2).rgb;
   float alpha = smoothstep(0.1, 1.0, shadows.b);
   color = vec3(alpha);
 
   // get reflection
   vec4 base = texture2DProj(u_texture, v_uv);
   color += base.rgb;
+  
+  // color overlay
+  color = blendOverlay(color, u_color);
 
-  gl_FragColor = vec4(blendOverlay(color, u_color), 1.0);
+  // dirt
+  float dirt = texture2D(u_maskTexture, v_uv2).r;
+  color *= dirt;
+
+  // apply color
+  gl_FragColor = vec4(color, 1.0);
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

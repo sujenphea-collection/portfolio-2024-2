@@ -92,7 +92,9 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_color: { value: new Color(0x7f7f7f) },
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
-    u_shadows: { value: null as Texture | null },
+
+    u_shadowTexture: { value: null as Texture | null },
+    u_maskTexture: { value: null as Texture | null },
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -105,7 +107,18 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.magFilter = LinearFilter
 
         floorBakedTexture.current = tex
-        groundUniforms.current.u_shadows.value = tex
+        groundUniforms.current.u_shadowTexture.value = tex
+      },
+    })
+
+    loader.add("/textures/floor.jpg", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        groundUniforms.current.u_maskTexture.value = tex
       },
     })
   }
