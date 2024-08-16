@@ -87,7 +87,6 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   // scene
   const groundMesh = useRef<Mesh | null>(null)
-  const groundGeometryRef = useRef<BufferGeometry | null>(null)
 
   const groundUniforms = useRef({
     u_color: { value: new Color(0x7f7f7f) },
@@ -98,18 +97,6 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
-    loader.add("/models/ground.obj", ItemType.Obj, {
-      onLoad: (obj) => {
-        const group = obj as Group
-        group.traverse((item) => {
-          if (item.type === "Mesh") {
-            const mesh = item as Mesh
-            groundGeometryRef.current = mesh.geometry as BufferGeometry
-          }
-        })
-      },
-    })
-
     loader.add("/textures/floor-baked.jpg", ItemType.Texture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
@@ -273,11 +260,11 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       <group>
         <mesh
           ref={groundMesh}
-          //  geometry={groundGeometryRef.current ?? undefined}
           onBeforeRender={onReflectorBeforeRender}
           rotation={[Math.PI * -0.5, 0, 0]}
+          position={[0, 0.01, 0]}
         >
-          <planeGeometry args={[10, 10]} />
+          <planeGeometry args={[12, 12]} />
           <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} />
         </mesh>
       </group>
