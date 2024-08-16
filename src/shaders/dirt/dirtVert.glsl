@@ -27,7 +27,7 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   // set varyings
-  v_uv = position.xy + 0.5;
+  v_uv = position.xz + 0.5;
   v_density = smoothstep(.15, 0., instanceRands.x);
   v_opacity = (instanceRands.y * 0.7 + 
                sin(u_time * mix(1., 5., instanceRands.z) + instanceRands.w * 6.283) * 0.3);

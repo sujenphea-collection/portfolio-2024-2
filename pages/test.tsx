@@ -55,6 +55,9 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     dirtUniformsRef.current.u_time.value += delta
+
+    // update position
+    dirtMeshRef.current?.scale.setScalar(12)
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -67,6 +70,7 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     // setup geometry
     const geometry = dirtMeshRef.current?.geometry ?? new InstancedBufferGeometry()
     const refGeometry = new PlaneGeometry(1, 1)
+    refGeometry.rotateX(Math.PI * -0.5)
     Object.keys(refGeometry.attributes).forEach((attribute) => {
       geometry.setAttribute(attribute, refGeometry.getAttribute(attribute))
     })
@@ -77,9 +81,9 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const instancePos = new Float32Array(DIRT_COUNT.current * 3)
     const instanceRand = new Float32Array(DIRT_COUNT.current * 4)
     for (let i = 0, i3 = 0, i4 = 0; i < DIRT_COUNT.current; i += 1, i3 += 3, i4 += 4) {
-      instancePos[i3 + 0] = rand() * 2 - 1
+      instancePos[i3 + 0] = (rand() * 2 - 1) * 0.5
       instancePos[i3 + 1] = 0
-      instancePos[i3 + 2] = rand() * 2 - 1
+      instancePos[i3 + 2] = (rand() * 2 - 1) * 0.5
 
       instanceRand[i4 + 0] = rand()
       instanceRand[i4 + 1] = rand()
@@ -159,8 +163,8 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       {/* scene */}
       <Dirt ref={dirtRef} show={props.show} />
 
-      <mesh rotation={[Math.PI * -0.5, 0, 0]} position={[0, -1, 0]}>
-        <planeGeometry args={[10, 10]} />
+      <mesh rotation={[Math.PI * -0.5, 0, 0]} position={[0, 0, 0]}>
+        <planeGeometry args={[12, 12]} />
         <meshBasicMaterial color="red" />
       </mesh>
 
