@@ -11,6 +11,7 @@ import {
   Mesh,
   OneFactor,
   PlaneGeometry,
+  ShaderMaterial,
   ZeroFactor,
 } from "three"
 import { Three } from "../src/experience/Three"
@@ -35,7 +36,7 @@ type ExperienceRef = {
 const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   // scene
-  const dirtMeshRef = useRef<Mesh | null>(null)
+  const dirtMeshRef = useRef<Mesh<InstancedBufferGeometry, ShaderMaterial> | null>(null)
   const dirtUniformsRef = useRef({
     u_time: { value: 0 },
   })
@@ -52,45 +53,33 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(({ camera }, delta) => {
-    // update position
-    dirtMeshRef.current?.position.copy(camera.position)
-    dirtMeshRef.current?.quaternion.copy(camera.quaternion)
-    dirtMeshRef.current?.scale.setScalar((camera.near + camera.far) / 2)
-
-    // update uniforms
+  useFrame((_, delta) => {
     dirtUniformsRef.current.u_time.value += delta
   })
 
   /* --------------------------------- effects -------------------------------- */
-  // setup dirt
+  // setup
   useEffect(() => {
     if (!props.show) {
       return
     }
 
-    // setup plane geometry
-    const rows = 3
-    const planeGeometry = new PlaneGeometry(1, 1, 1, rows)
-
-    // create geometry
-    const geometry = new InstancedBufferGeometry()
-    Object.keys(planeGeometry.attributes).forEach((attribute) => {
-      geometry.setAttribute(attribute, planeGeometry.getAttribute(attribute))
+    // setup geometry
+    const geometry = dirtMeshRef.current?.geometry ?? new InstancedBufferGeometry()
+    const refGeometry = new PlaneGeometry(1, 1)
+    Object.keys(refGeometry.attributes).forEach((attribute) => {
+      geometry.setAttribute(attribute, refGeometry.getAttribute(attribute))
     })
-    geometry.index = planeGeometry.index
+    geometry.index = refGeometry.index
 
     // setup instance
     const rand = MathUtils.getSeedRandomFn("dirt")
     const instancePos = new Float32Array(DIRT_COUNT.current * 3)
     const instanceRand = new Float32Array(DIRT_COUNT.current * 4)
     for (let i = 0, i3 = 0, i4 = 0; i < DIRT_COUNT.current; i += 1, i3 += 3, i4 += 4) {
-      const phi = 2 * Math.PI * rand() // between 0 and 2π (horizontal range)
-      const theta = Math.acos(2 * rand() - 1) // between 0 and π (vertical range)
-
-      instancePos[i3 + 0] = Math.sin(theta) * Math.cos(phi)
-      instancePos[i3 + 1] = Math.cos(theta)
-      instancePos[i3 + 2] = Math.sin(theta) * Math.sin(phi)
+      instancePos[i3 + 0] = rand() * 2 - 1
+      instancePos[i3 + 1] = 0
+      instancePos[i3 + 2] = rand() * 2 - 1
 
       instanceRand[i4 + 0] = rand()
       instanceRand[i4 + 1] = rand()
@@ -98,10 +87,9 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       instanceRand[i4 + 3] = rand()
     }
 
-    geometry.setAttribute("instancePosition", new InstancedBufferAttribute(instancePos, 3))
+    geometry.setAttribute("instancePos", new InstancedBufferAttribute(instancePos, 3))
     geometry.setAttribute("instanceRands", new InstancedBufferAttribute(instanceRand, 4))
 
-    // set geometry
     if (dirtMeshRef.current) {
       dirtMeshRef.current.geometry = geometry
     }
@@ -111,8 +99,8 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        {/* stars */}
         <mesh ref={dirtMeshRef}>
+          <instancedBufferGeometry instanceCount={DIRT_COUNT.current} />
           <shaderMaterial
             uniforms={dirtUniformsRef.current}
             vertexShader={dirtVert}

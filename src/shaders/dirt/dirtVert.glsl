@@ -1,29 +1,30 @@
-attribute vec3 instancePosition;
+// instance
+attribute vec3 instancePos;
 attribute vec4 instanceRands;
 
 uniform float u_time;
 
+// varyings
 varying float v_opacity;
 varying float v_density;
 varying vec2 v_uv;
-
-#define PI 3.1415926538
 
 /* -------------------------------------------------------------------------- */
 /*                                    main                                    */
 /* -------------------------------------------------------------------------- */
 void main() {
-  vec4 mvPosition = modelViewMatrix * vec4(instancePosition, 1.0);
+  vec3 pos = position;
 
-  // get local position
-  float scale = mix(4., 20., instanceRands.x);
+  // scale
+  float scale = mix(0.01, 0.1, instanceRands.x);
   float size = 0.2 * scale;
-  
-  vec3 localPosition = vec3(position.xy, 0.) * size;
-  mvPosition.xy += localPosition.xy;
+  pos *= scale;
 
-  // apply position
-  gl_Position = projectionMatrix * mvPosition;
+  // position
+  pos += instancePos;
+
+  // display
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   // set varyings
   v_uv = position.xy + 0.5;
