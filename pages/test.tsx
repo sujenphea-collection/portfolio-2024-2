@@ -1,3 +1,4 @@
+import { OrbitControls } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
 import gsap from "gsap"
 import Link from "next/link"
@@ -15,15 +16,13 @@ import {
   PlaneGeometry,
   RGBAFormat,
   ShaderMaterial,
-  Texture,
   ZeroFactor,
 } from "three"
 import { clamp } from "three/src/math/MathUtils"
-import { OrbitControls } from "@react-three/drei"
 import { Three } from "../src/experience/Three"
 import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
-import { ItemType, Loader } from "../src/utils/loader"
+import { Loader } from "../src/utils/loader"
 import { MathUtils } from "../src/utils/math"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
@@ -45,10 +44,29 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const dirtMeshRef = useRef<Mesh<InstancedBufferGeometry, ShaderMaterial> | null>(null)
   const dirtUniformsRef = useRef({
     u_time: { value: 0 },
+
+    u_offsetTexture: { value: null as DataTexture | null },
   })
 
   // constants
   const DIRT_COUNT = useRef(4096)
+
+  // params
+  const mouseDataTexture = useRef<DataTexture | null>(null)
+  const mouseParams = useRef({
+    x: 0,
+    y: 0,
+    velocityX: 0,
+    velocityY: 0,
+    prevX: 0,
+    prevY: 0,
+
+    gridSize: 36,
+    offsetLerp: 0.9,
+    mouse: 0.5,
+    strength: 0.25,
+    hoverSize: 1,
+  })
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = () => {}
@@ -64,6 +82,53 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     // update position
     dirtMeshRef.current?.scale.setScalar(12)
+
+    // update mouse
+    const data = mouseDataTexture.current?.image.data
+
+    // - lerp offset
+    if (data) {
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] *= mouseParams.current.offsetLerp
+        data[i + 1] *= mouseParams.current.offsetLerp
+      }
+    }
+
+    // - add mouse hover
+    if (data) {
+      const gridWidth = mouseParams.current.gridSize
+      const gridHeight = mouseParams.current.gridSize
+
+      const gridMouseX = gridWidth * mouseParams.current.x
+      const gridMouseY = gridHeight * (1 - mouseParams.current.y)
+
+      const aspect = 1
+      const maxDist = gridWidth * mouseParams.current.mouse
+
+      for (let i = 0; i < gridWidth; i += 1) {
+        for (let j = 0; j < gridHeight; j += 1) {
+          const distance = (gridMouseX - i) ** 2 / aspect + (gridMouseY - j) ** 2
+
+          if (distance < mouseParams.current.hoverSize) {
+            const index = 4 * (i + gridWidth * j)
+
+            let power = maxDist / Math.sqrt(distance)
+            power = clamp(power, 0, 10)
+
+            data[index] += mouseParams.current.strength * mouseParams.current.velocityX * power
+            data[index + 1] -= mouseParams.current.strength * mouseParams.current.velocityY * power
+          }
+        }
+      }
+
+      mouseParams.current.velocityX *= 0.9
+      mouseParams.current.velocityY *= 0.9
+    }
+
+    // - update texture
+    if (mouseDataTexture.current) {
+      mouseDataTexture.current.needsUpdate = true
+    }
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -105,11 +170,39 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     }
   }, [props.show])
 
+  // setup mouse
+  useEffect(() => {
+    // setup grid
+    const width = mouseParams.current.gridSize
+    const height = mouseParams.current.gridSize
+    const size = width * height
+    const data = new Float32Array(4 * size)
+
+    mouseDataTexture.current = new DataTexture(data, width, height, RGBAFormat, FloatType)
+    mouseDataTexture.current.magFilter = NearestFilter
+    mouseDataTexture.current.minFilter = NearestFilter
+
+    dirtUniformsRef.current.u_offsetTexture.value = mouseDataTexture.current
+    dirtUniformsRef.current.u_offsetTexture.value.needsUpdate = true
+  }, [])
+
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
       <group>
-        <mesh ref={dirtMeshRef}>
+        <mesh
+          ref={dirtMeshRef}
+          onPointerMove={(ev) => {
+            mouseParams.current.x = ev.uv?.x ?? 0
+            mouseParams.current.y = 1 - (ev.uv?.y ?? 0)
+
+            mouseParams.current.velocityX = mouseParams.current.x - mouseParams.current.prevX
+            mouseParams.current.velocityY = mouseParams.current.y - mouseParams.current.prevY
+
+            mouseParams.current.prevX = mouseParams.current.x
+            mouseParams.current.prevY = mouseParams.current.y
+          }}
+        >
           <instancedBufferGeometry instanceCount={DIRT_COUNT.current} />
           <shaderMaterial
             uniforms={dirtUniformsRef.current}
@@ -132,184 +225,21 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Dirt.displayName = "Dirt"
 
-const GridPlane = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
-  /* ---------------------------------- refs ---------------------------------- */
-  const mouseDataTexture = useRef<DataTexture | null>(null)
-
-  // scene
-  const planeUniforms = useRef({
-    u_offset: { value: null as DataTexture | null },
-
-    u_texture: { value: null as Texture | null },
-  })
-
-  // params
-  const mouse = useRef({
-    x: 0,
-    y: 0,
-    velocityX: 0,
-    velocityY: 0,
-    prevX: 0,
-    prevY: 0,
-  })
-
-  const params = useRef({
-    gridSize: 36,
-    offsetLerp: 0.9,
-    mouse: 0.5,
-    strength: 0.25,
-  })
-
-  /* -------------------------------- functions ------------------------------- */
-  const loadItems = (loader: Loader) => {
-    loader.add("/textures/background.jpg", ItemType.Texture, {
-      onLoad: (_tex) => {
-        const tex = _tex as Texture
-        tex.flipY = true
-
-        planeUniforms.current.u_texture.value = tex
-      },
-    })
-  }
-
-  /* --------------------------------- handle --------------------------------- */
-  useImperativeHandle(ref, () => ({
-    loadItems,
-  }))
-
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
-    const data = mouseDataTexture.current?.image.data
-
-    // lerp offset
-    if (data) {
-      for (let i = 0; i < data.length; i += 4) {
-        data[i] *= params.current.offsetLerp
-        data[i + 1] *= params.current.offsetLerp
-      }
-    }
-
-    // add mouse hover
-    if (data) {
-      const gridWidth = params.current.gridSize
-      const gridHeight = params.current.gridSize
-
-      const gridMouseX = gridWidth * mouse.current.x
-      const gridMouseY = gridHeight * (1 - mouse.current.y)
-
-      const aspect = 1
-      const maxDist = gridWidth * params.current.mouse
-      const maxDistSq = maxDist ** 2
-
-      for (let i = 0; i < gridWidth; i += 1) {
-        for (let j = 0; j < gridHeight; j += 1) {
-          const distance = (gridMouseX - i) ** 2 / aspect + (gridMouseY - j) ** 2
-
-          if (distance < maxDistSq) {
-            const index = 4 * (i + gridWidth * j)
-
-            let power = maxDist / Math.sqrt(distance)
-            power = clamp(power, 0, 10)
-
-            data[index] += params.current.strength * mouse.current.velocityX * power
-            data[index + 1] -= params.current.strength * mouse.current.velocityY * power
-          }
-        }
-      }
-
-      mouse.current.velocityX *= 0.9
-      mouse.current.velocityY *= 0.9
-      // console.log("dbg - mouse: ", mouse.current)
-    }
-
-    // update texture
-    if (mouseDataTexture.current) {
-      mouseDataTexture.current.needsUpdate = true
-    }
-  })
-
-  /* --------------------------------- effects -------------------------------- */
-  // setup
-  useEffect(() => {
-    // setup grid
-    const width = params.current.gridSize
-    const height = params.current.gridSize
-    const size = width * height
-    const data = new Float32Array(4 * size)
-
-    mouseDataTexture.current = new DataTexture(data, width, height, RGBAFormat, FloatType)
-    mouseDataTexture.current.magFilter = NearestFilter
-    mouseDataTexture.current.minFilter = NearestFilter
-
-    planeUniforms.current.u_offset.value = mouseDataTexture.current
-    planeUniforms.current.u_offset.value.needsUpdate = true
-  }, [])
-
-  /* ---------------------------------- main ---------------------------------- */
-  return (
-    props.show && (
-      <group>
-        <mesh
-          position={[0, 0, 0]}
-          onPointerMove={(ev) => {
-            mouse.current.x = ev.uv?.x ?? 0
-            mouse.current.y = 1 - (ev.uv?.y ?? 0)
-
-            mouse.current.velocityX = mouse.current.x - mouse.current.prevX
-            mouse.current.velocityY = mouse.current.y - mouse.current.prevY
-
-            mouse.current.prevX = mouse.current.x
-            mouse.current.prevY = mouse.current.y
-          }}
-        >
-          <planeGeometry args={[1, 1, 10, 10]} />
-          <shaderMaterial
-            uniforms={planeUniforms.current}
-            vertexShader={`
-              varying vec2 v_uv;
-              void main() {
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-
-                v_uv = uv;
-              }
-            `}
-            fragmentShader={`
-              uniform sampler2D u_texture;
-              uniform sampler2D u_offset;
-              varying vec2 v_uv;
-              void main() {
-                vec4 offset = texture2D(u_offset, v_uv);
-                vec4 tex = texture2D(u_texture, v_uv - offset.xy);
-                gl_FragColor = vec4(tex.rgb, 1.0);
-                // gl_FragColor = vec4(offset.xy, 1.0, 1.0); // gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
-              }
-            `}
-          />
-        </mesh>
-      </group>
-    )
-  )
-})
-GridPlane.displayName = "GridPlane"
-
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   /* ---------------------------------- refs ---------------------------------- */
   // ui
   const dirtRef = useRef<ExperienceRef | null>(null)
-  const gridPlaneRef = useRef<ExperienceRef | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
     // resize scenes
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
-    gridPlaneRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
     dirtRef.current?.loadItems(props.loader)
-    gridPlaneRef.current?.loadItems(props.loader)
 
     props.preinitComplete()
 
@@ -331,7 +261,6 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     <>
       {/* scene */}
       <Dirt ref={dirtRef} show={props.show} />
-      <GridPlane ref={gridPlaneRef} show={props.show} />
 
       <mesh rotation={[Math.PI * -0.5, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[12, 12]} />

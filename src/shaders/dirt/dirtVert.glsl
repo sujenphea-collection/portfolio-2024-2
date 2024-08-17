@@ -3,6 +3,7 @@ attribute vec3 instancePos;
 attribute vec4 instanceRands;
 
 uniform float u_time;
+uniform sampler2D u_offsetTexture;
 
 // varyings
 varying float v_opacity;
@@ -22,6 +23,11 @@ void main() {
 
   // position
   pos += instancePos;
+
+  // offset
+  vec2 uv = (vec2(instancePos.x, -instancePos.z) * 2.0 + 1.0) * 0.5;
+  vec4 offset = texture2D(u_offsetTexture, uv);
+  pos.y += length(offset.xy);
 
   // display
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
