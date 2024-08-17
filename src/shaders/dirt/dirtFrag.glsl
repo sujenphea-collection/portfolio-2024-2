@@ -14,7 +14,7 @@ void main() {
            smoothstep(0.3 + v_density * 0.7, v_density * 0.5, dist) * 0.2 + 
            smoothstep(0.125 + v_density * 0.875, v_density * 0.5, dist) * 0.6;
   alpha *= v_opacity;
-  alpha *= v_offset * 5.0;
+  alpha *= v_offset * 30.0;
 
   gl_FragColor = vec4(alpha, alpha, alpha, 0.);
 }

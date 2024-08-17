@@ -87,7 +87,7 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   })
 
   // constants
-  const DIRT_COUNT = useRef(8192)
+  const DIRT_COUNT = useRef(32768)
 
   // params
   const mouseDataTexture = useRef<DataTexture | null>(null)
