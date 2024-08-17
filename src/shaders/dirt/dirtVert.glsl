@@ -9,6 +9,7 @@ uniform sampler2D u_offsetTexture;
 varying float v_opacity;
 varying float v_density;
 varying vec2 v_uv;
+varying float v_offset;
 
 /* -------------------------------------------------------------------------- */
 /*                                    main                                    */
@@ -26,14 +27,15 @@ void main() {
 
   // offset
   vec2 uv = (vec2(instancePos.x, -instancePos.z) * 2.0 + 1.0) * 0.5;
-  vec4 offset = texture2D(u_offsetTexture, uv);
-  pos.y += length(offset.xy);
+  float offset = length(texture2D(u_offsetTexture, uv).xy);
+  pos.y += (offset * instanceRands.x);
 
   // display
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   // set varyings
   v_uv = position.xz + 0.5;
+  v_offset = offset;
   v_density = smoothstep(.15, 0., instanceRands.x);
   v_opacity = (instanceRands.y * 0.7 + 
                sin(u_time * mix(1., 5., instanceRands.z) + instanceRands.w * 6.283) * 0.3);
