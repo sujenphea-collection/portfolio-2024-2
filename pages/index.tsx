@@ -516,6 +516,10 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_scale: { value: 0.1 },
     u_time: { value: 0 },
 
+    // color
+    color_top: { value: new Color(0xedf2fb) },
+    color_bottom: { value: new Color(0x001845) },
+
     // noise
     u_noiseTexture: { value: null as Texture | null },
     u_noiseTexelSize: { value: new Vector2() },

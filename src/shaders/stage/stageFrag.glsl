@@ -1,10 +1,14 @@
 uniform float u_scale;
+uniform float u_time;
+
+// color
+uniform vec3 color_top;
+uniform vec3 color_bottom;
 
 // noise
 uniform sampler2D u_noiseTexture;
 uniform vec2 u_noiseTexelSize;
 uniform vec2 u_noiseCoordOffset;
-uniform float u_time;
 
 varying vec2 v_uv;
 varying vec3 v_worldPosition;
@@ -50,9 +54,9 @@ vec3 rgb(int r, int g, int b) {
   return vec3(float(r) / 255.0, float(g) / 255.0, float(b) / 255.0);
 }
 
-vec3 gradient(vec3 colorBottom, vec3 colorTop, vec3 colorNoise, float yFactor, float noise) {
-  vec3 vertical_gradient = mix(colorBottom, colorTop, yFactor);
-  return mix(vertical_gradient, colorNoise, noise * (1. - yFactor));
+vec3 gradient(vec3 colorBottom, vec3 colorTop, float y) {
+  vec3 vertical_gradient = mix(colorBottom, colorTop, y);
+  return vertical_gradient;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -79,12 +83,7 @@ float noise(vec3 p) {
 /*                                    main                                    */
 /* -------------------------------------------------------------------------- */
 void main() {
-  // get grid color
   vec3 color = vec3(0.0);
-
-  float grid = pristineGrid(v_worldPosition.xz * vec2(1.0 / u_scale), vec2(0.02));
-  vec3 gridColor = vec3(0.2) * grid;
-  color = gridColor;
 
   // add noise
   vec3 bump = getNoise(gl_FragCoord.xy * vec2(1.0));
@@ -93,12 +92,17 @@ void main() {
 
   // color noise
   vec3 pos = vec3(v_uv, 0.0);
-  float colorNoise = noise(pos);
+  float noise = noise(pos);
   
-  vec3 gradient = gradient(rgb(8, 37, 198), rgb(50, 200, 50), rgb(0, 0, 10), v_uv.y, colorNoise);
-  gradient += rgb(255, 255, 255) * (1.0 - colorNoise);
+  vec3 gradient = gradient(color_bottom, color_top, v_uv.y);
+  gradient -= rgb(100, 100, 100) * (1.0 - noise);
 
   color += gradient;
+
+  // get grid color
+  float grid = pristineGrid(v_worldPosition.xz * vec2(1.0 / u_scale), vec2(0.02));
+  vec3 gridColor = vec3(0.2) * grid;
+  color -= gridColor;
 
 
   // set color
