@@ -514,6 +514,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   const floorUniforms = useRef({
     u_scale: { value: 0.1 },
+    u_time: { value: 0 },
 
     // noise
     u_noiseTexture: { value: null as Texture | null },
@@ -598,6 +599,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     screenUniforms.current.u_time.value += delta
+    floorUniforms.current.u_time.value += delta
   })
 
   /* ---------------------------------- main ---------------------------------- */

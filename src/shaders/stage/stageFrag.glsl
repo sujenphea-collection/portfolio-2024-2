@@ -4,7 +4,9 @@ uniform float u_scale;
 uniform sampler2D u_noiseTexture;
 uniform vec2 u_noiseTexelSize;
 uniform vec2 u_noiseCoordOffset;
+uniform float u_time;
 
+varying vec2 v_uv;
 varying vec3 v_worldPosition;
 
 /* -------------------------------------------------------------------------- */
@@ -44,6 +46,35 @@ vec3 getNoise(vec2 coord) {
   return texture2D(u_noiseTexture, coord * u_noiseTexelSize + u_noiseCoordOffset).rgb;
 }
 
+vec3 rgb(int r, int g, int b) {
+  return vec3(float(r) / 255.0, float(g) / 255.0, float(b) / 255.0);
+}
+
+vec3 gradient(vec3 colorBottom, vec3 colorTop, vec3 colorNoise, float yFactor, float noise) {
+  vec3 vertical_gradient = mix(colorBottom, colorTop, yFactor);
+  return mix(vertical_gradient, colorNoise, noise * (1. - yFactor));
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    noise                                   */
+/* -------------------------------------------------------------------------- */
+float gyroid(vec3 p) {
+  return dot(sin(p), cos(p.yzx));
+}
+
+float noise(vec3 p) {
+  float result = 0.;
+  float a = 0.5;
+  float count = 6.0;
+
+  for (float i = 0.; i < count; ++i, a /= 2.) {
+    p.z += u_time * 0.01;
+    result += abs(gyroid(p / a)) * a;
+  }
+
+  return result;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                    main                                    */
 /* -------------------------------------------------------------------------- */
@@ -56,9 +87,19 @@ void main() {
   color = gridColor;
 
   // add noise
-  vec3 noise = getNoise(gl_FragCoord.xy * vec2(1.0));
-  vec3 noiseColor = vec3(0.1) * noise.r;
-  color += noiseColor;
+  vec3 bump = getNoise(gl_FragCoord.xy * vec2(1.0));
+  vec3 bumpColor = vec3(0.1) * bump.r;
+  color += bumpColor;
+
+  // color noise
+  vec3 pos = vec3(v_uv, 0.0);
+  float colorNoise = noise(pos);
+  
+  vec3 gradient = gradient(rgb(8, 37, 198), rgb(50, 200, 50), rgb(0, 0, 10), v_uv.y, colorNoise);
+  gradient += rgb(255, 255, 255) * (1.0 - colorNoise);
+
+  color += gradient;
+
 
   // set color
   gl_FragColor = vec4(color, 1.);
