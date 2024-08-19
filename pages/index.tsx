@@ -1,6 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
-import Link from "next/link"
 import { useRouter } from "next/router"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
@@ -73,6 +72,9 @@ const CameraPositions = {
     rotation: { x: -0.09631061435150774, y: 0.0023820586763996427, z: 0.00023012929333132985 },
   },
 }
+
+// css
+const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -875,13 +877,88 @@ export default function Home() {
 
       {/* content */}
       <div className="relative">
-        <div className={cn("fixed right-10 top-10", "flex flex-col")}>
-          <Link href="/projects" className="bg-white text-black">
-            To Projects
-          </Link>
-          <Link href="/" className="bg-white text-black">
-            To Home
-          </Link>
+        {/* home */}
+        <div className="pb-[150vh]">
+          <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+            {/* title */}
+            <h2 className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
+              Home
+            </h2>
+
+            {/* description */}
+            <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+          </div>
+        </div>
+
+        {/* projects */}
+        <div>
+          {/* project 1 */}
+          <div className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  Project 1
+                </h2>
+
+                {/* description */}
+                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
+            </div>
+          </div>
+
+          {/* project 2 */}
+          <div className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  Project 2
+                </h2>
+
+                {/* description */}
+                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* about */}
+        <div className="pb-[150vh]">
+          <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+            <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              {/* title */}
+              <h2
+                className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+              >
+                About
+              </h2>
+
+              {/* description */}
+              <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+            </div>
+          </div>
+        </div>
+
+        {/* contact */}
+        <div className="pb-[150vh]">
+          <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+            <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              {/* title */}
+              <h2
+                className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+              >
+                Contact
+              </h2>
+
+              {/* description */}
+              <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+            </div>
+          </div>
         </div>
       </div>
     </>
