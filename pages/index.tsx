@@ -29,6 +29,7 @@ import {
   Scene,
   ShaderMaterial,
   Texture,
+  UniformsLib,
   Vector2,
   Vector3,
   Vector4,
@@ -297,8 +298,12 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
+    u_scale: { value: 3.0 },
+
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
+
+    ...UniformsLib.fog,
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -496,9 +501,10 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           onBeforeRender={onReflectorBeforeRender}
           rotation={[Math.PI * -0.5, 0, 0]}
           position={[0, 0.01, 0]}
+          scale={[3, 3, 3]}
         >
           <planeGeometry args={[12, 12]} />
-          <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} />
+          <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} fog />
         </mesh>
       </group>
     )
@@ -514,6 +520,11 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   const floorUniforms = useRef({
     u_scale: { value: 0.1 },
+    u_time: { value: 0 },
+
+    // color
+    color_top: { value: new Color(0xedf2fb) },
+    color_bottom: { value: new Color(0x001845) },
 
     // noise
     u_noiseTexture: { value: null as Texture | null },
@@ -598,6 +609,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     screenUniforms.current.u_time.value += delta
+    floorUniforms.current.u_time.value += delta
   })
 
   /* ---------------------------------- main ---------------------------------- */
@@ -716,6 +728,9 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
+
+      <fog args={[0x090929, 15, 25]} attach="fog" />
+      <color attach="background" args={[0x090929]} />
     </>
   )
 }
