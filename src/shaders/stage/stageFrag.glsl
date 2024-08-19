@@ -1,6 +1,8 @@
 uniform float u_scale;
 uniform float u_time;
 
+uniform float u_showRatio;
+
 // color
 uniform vec3 color_top;
 uniform vec3 color_bottom;
@@ -84,6 +86,7 @@ float noise(vec3 p) {
 /* -------------------------------------------------------------------------- */
 void main() {
   vec3 color = vec3(0.0);
+  float alpha = 1.0;
 
   // add noise
   vec3 bump = getNoise(gl_FragCoord.xy * vec2(1.0));
@@ -104,7 +107,12 @@ void main() {
   vec3 gridColor = vec3(0.2) * grid;
   color -= gridColor;
 
+  // alpha
+  float smoothRatio = u_showRatio -
+                      v_uv.y * 0.2 - 
+                      (1.0 - color.r) * 0.4;
+  alpha = smoothstep(0.0, 0.1, smoothRatio);
 
   // set color
-  gl_FragColor = vec4(color, 1.);
+  gl_FragColor = vec4(color, alpha);
 }

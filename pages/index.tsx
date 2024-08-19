@@ -546,6 +546,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_scale: { value: 0.1 },
     u_time: { value: 0 },
 
+    u_showRatio: { value: 0 },
+
     // color
     color_top: { value: new Color(0xedf2fb) },
     color_bottom: { value: new Color(0x001845) },
@@ -560,6 +562,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_texture: { value: null as Texture | null },
     u_time: { value: 0 },
   })
+
+  // ui
+  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -632,6 +637,16 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
+    const homeBounds = homeUI.current?.getBoundingClientRect()
+
+    // home
+    const homeTop = homeBounds?.top ?? 0
+    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
+
+    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
+    floorUniforms.current.u_showRatio.value = stageShowRatio
+
+    // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta
   })
@@ -642,11 +657,21 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       <group>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined} userData={{ reflect: false }}>
-          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
+          <shaderMaterial
+            uniforms={floorUniforms.current}
+            vertexShader={stageVert}
+            fragmentShader={stageFrag}
+            transparent
+          />
         </mesh>
 
-        <mesh geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
-          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
+        <mesh position={[0, 0.1, 0]} geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
+          <shaderMaterial
+            uniforms={floorUniforms.current}
+            vertexShader={stageVert}
+            fragmentShader={stageFrag}
+            transparent
+          />
         </mesh>
 
         {/* screen */}
