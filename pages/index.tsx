@@ -729,8 +729,8 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
 
-      <fog args={[0x0e0e1c, 15, 25]} attach="fog" />
-      <color attach="background" args={[0x0e0e1c]} />
+      <fog args={[0x090929, 15, 25]} attach="fog" />
+      <color attach="background" args={[0x090929]} />
     </>
   )
 }
