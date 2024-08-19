@@ -1,5 +1,7 @@
 /* eslint-disable no-bitwise */
 
+import { Vector3Like } from "three"
+
 const _sfc32 = (a: number, b: number, c: number, d: number) => {
   return () => {
     // eslint-disable-next-line no-param-reassign
@@ -68,6 +70,14 @@ export class MathUtils {
 
   static mix(min: number, max: number, v: number) {
     return min * (1 - v) + max * v
+  }
+
+  static mixVec3(min: Vector3Like, max: Vector3Like, v: number): Vector3Like {
+    const x = min.x * (1 - v) + max.x * v
+    const y = min.y * (1 - v) + max.y * v
+    const z = min.z * (1 - v) + max.z * v
+
+    return { x, y, z }
   }
 
   /**

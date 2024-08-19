@@ -1,6 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
-import { useRouter } from "next/router"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
   AddEquation,
@@ -22,7 +21,6 @@ import {
   PerspectiveCamera,
   Plane,
   PlaneGeometry,
-  Quaternion,
   RepeatWrapping,
   RGBAFormat,
   Scene,
@@ -31,6 +29,7 @@ import {
   UniformsLib,
   Vector2,
   Vector3,
+  Vector3Like,
   Vector4,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -63,15 +62,38 @@ type ExperienceRef = {
 /*                                  constants                                 */
 /* -------------------------------------------------------------------------- */
 const CameraPositions = {
-  intro: {
-    position: { x: -6.159406959102013, y: 5.536282269022624, z: 6.587827968025041 },
-    rotation: { x: -0.7681781572206483, y: -0.7423109188375244, z: -0.5785537424927941 },
+  home: {
+    position: { x: -8.395355214815083, y: 3.3579525957858896, z: 5.489054327474239 },
+    rotation: { x: -0.5321868791684208, y: -1.0205317487831038, z: -0.4651942426903008 },
   },
   projects: {
-    position: { x: -0.41792582937172246, y: 0.9159469228548319, z: 2.11393571000216 },
-    rotation: { x: -0.09631061435150774, y: 0.0023820586763996427, z: 0.00023012929333132985 },
+    position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
+    rotation: { x: 0, y: 0, z: 0 },
+  },
+  about: {
+    position: { x: -0.018808307775197538, y: 0.4989437981795135, z: 2.0269110132599835 },
+    rotation: { x: -0.09303697822124293, y: -0.0059999620528716794, z: -0.0005598311410729142 },
+  },
+  about2: {
+    position: { x: -1.0542873929824532, y: 0.5226093590653846, z: 1.7595346290785845 },
+    rotation: { x: -0.1832165381986701, y: -0.8497477741541486, z: -0.13828896837219806 },
+  },
+  contact: {
+    position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 0.3801748125186579 },
+    rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
   },
 }
+
+// ids
+const homeSectionId = "homeSectionId"
+
+const projectsSectionId = "projectsSectionId"
+
+const aboutSectionId = "aboutSectionId"
+const aboutIntroId = "aboutIntroId"
+const aboutContentId = "aboutContentId"
+
+const contactSectionId = "contactSectionId"
 
 // css
 const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
@@ -640,19 +662,21 @@ Stage.displayName = "Stage"
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   const { camera } = useThree()
-  const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
-  // ui
+  // scene
   const dirtRef = useRef<ExperienceRef | null>(null)
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
 
   // params
-  const cameraParams = useRef({ position: CameraPositions.intro.position, rotation: CameraPositions.intro.rotation })
-  const currQuaternion = useRef(new Quaternion())
-  const endQuaternion = useRef(new Quaternion())
   const tempEuler = useRef(new Euler())
+
+  // ui
+  const homeUI = useRef(document.getElementById(homeSectionId))
+  const projectsUI = useRef(document.getElementById(projectsSectionId))
+  const aboutUI = useRef(document.getElementById(aboutSectionId))
+  const aboutIntroUI = useRef(document.getElementById(aboutIntroId))
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -664,11 +688,74 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame(() => {
-    // update camera
-    camera.position.lerp(cameraParams.current.position, 0.1)
+    const homeBounds = homeUI.current?.getBoundingClientRect()
+    const projectsBounds = projectsUI.current?.getBoundingClientRect()
+    const aboutBounds = aboutUI.current?.getBoundingClientRect()
+    const aboutIntroBounds = aboutIntroUI.current?.getBoundingClientRect()
 
-    currQuaternion.current.slerp(endQuaternion.current, 0.1)
-    camera.quaternion.copy(currQuaternion.current)
+    // home
+    const homeTop = homeBounds?.top ?? 0
+    const homeBottom = homeBounds?.bottom ?? 0
+    const homeActive = homeTop <= Properties.viewportHeight && homeBottom >= 0
+    const homeHideScreenOffset = -homeBottom / Properties.viewportHeight
+
+    // projects
+    const projectsShowRatio = MathUtils.fit(homeHideScreenOffset, -1, 0, 0, 1)
+    const projectsTop = projectsBounds?.top ?? 0
+    const projectsBottom = projectsBounds?.bottom ?? 0
+    const projectsActive = projectsTop <= Properties.viewportHeight && projectsBottom >= 0
+    const projectsHideScreenOffset = -projectsBottom / Properties.viewportHeight
+
+    // about
+    const aboutShowRatio = MathUtils.fit(projectsHideScreenOffset, -1, 0, 0, 1)
+    const aboutTop = aboutBounds?.top ?? 0
+    const aboutBottom = aboutBounds?.bottom ?? 0
+    const aboutActive = aboutTop <= Properties.viewportHeight && aboutBottom >= 0
+    const aboutHideScreenOffset = -aboutBottom / Properties.viewportHeight
+
+    const aboutIntroTop = aboutIntroBounds?.top ?? 0
+    const aboutIntroBottom = aboutIntroBounds?.bottom ?? 0
+    const aboutIntroActive = aboutIntroTop <= Properties.viewportHeight && aboutIntroBottom >= 0
+    const aboutIntroHideScreenOffset = -aboutIntroBottom / Properties.viewportHeight
+
+    const aboutContentShowRatio = MathUtils.fit(aboutIntroHideScreenOffset, -1, 0, 0, 1)
+
+    // contact
+    const contactShowRatio = MathUtils.fit(aboutHideScreenOffset, -1, 0, 0, 1)
+
+    // get camera
+    let cameraPos: Vector3Like
+    let cameraRot: Vector3Like
+    if (homeActive) {
+      cameraPos = MathUtils.mixVec3(CameraPositions.home.position, CameraPositions.projects.position, projectsShowRatio)
+      cameraRot = MathUtils.mixVec3(CameraPositions.home.rotation, CameraPositions.projects.rotation, projectsShowRatio)
+    } else if (projectsActive) {
+      cameraPos = MathUtils.mixVec3(CameraPositions.projects.position, CameraPositions.about.position, aboutShowRatio)
+      cameraRot = MathUtils.mixVec3(CameraPositions.projects.rotation, CameraPositions.about.rotation, aboutShowRatio)
+    } else if (aboutActive && aboutIntroActive) {
+      cameraPos = MathUtils.mixVec3(
+        CameraPositions.about.position,
+        CameraPositions.about2.position,
+        aboutContentShowRatio
+      )
+      cameraRot = MathUtils.mixVec3(
+        CameraPositions.about.rotation,
+        CameraPositions.about2.rotation,
+        aboutContentShowRatio
+      )
+    } else if (aboutActive) {
+      cameraPos = MathUtils.mixVec3(CameraPositions.about2.position, CameraPositions.contact.position, contactShowRatio)
+      cameraRot = MathUtils.mixVec3(CameraPositions.about2.rotation, CameraPositions.contact.rotation, contactShowRatio)
+    } else {
+      cameraPos = camera.position
+      cameraRot = camera.rotation
+    }
+
+    // set camera
+    camera.position.copy(cameraPos)
+
+    tempEuler.current.set(cameraRot.x, cameraRot.y, cameraRot.z)
+    camera.quaternion.setFromEuler(tempEuler.current)
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -695,33 +782,15 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   // setup camera
   useEffect(() => {
-    camera.position.copy(cameraParams.current.position)
+    camera.position.copy(CameraPositions.home.position)
     camera.rotation.set(
-      cameraParams.current.rotation.x,
-      cameraParams.current.rotation.y,
-      cameraParams.current.rotation.z
+      CameraPositions.home.rotation.x,
+      CameraPositions.home.rotation.y,
+      CameraPositions.home.rotation.z
     )
-    camera.updateProjectionMatrix()
-    currQuaternion.current.copy(camera.quaternion)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // update route
-  useEffect(() => {
-    if (asPath === "/projects") {
-      cameraParams.current.position = CameraPositions.projects.position
-      cameraParams.current.rotation = CameraPositions.projects.rotation
-    } else {
-      cameraParams.current.position = CameraPositions.intro.position
-      cameraParams.current.rotation = CameraPositions.intro.rotation
-    }
-
-    // update end rotation
-    const rotation = cameraParams.current.rotation
-    tempEuler.current.set(rotation.x, rotation.y, rotation.z)
-    endQuaternion.current.setFromEuler(tempEuler.current)
-  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -878,7 +947,7 @@ export default function Home() {
       {/* content */}
       <div className="relative">
         {/* home */}
-        <div className="pb-[150vh]">
+        <div id={homeSectionId} className="pb-[150vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             {/* title */}
             <h2 className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
@@ -891,7 +960,7 @@ export default function Home() {
         </div>
 
         {/* projects */}
-        <div>
+        <div id={projectsSectionId}>
           {/* project 1 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
@@ -928,24 +997,44 @@ export default function Home() {
         </div>
 
         {/* about */}
-        <div className="pb-[150vh]">
-          <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-            <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
-              {/* title */}
-              <h2
-                className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
-              >
-                About
-              </h2>
+        <div id={aboutSectionId}>
+          {/* intro */}
+          <div id={aboutIntroId} className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  About
+                </h2>
 
-              {/* description */}
-              <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                {/* description */}
+                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
+            </div>
+          </div>
+
+          {/* content */}
+          <div id={aboutContentId} className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  About
+                </h2>
+
+                {/* description */}
+                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
             </div>
           </div>
         </div>
 
         {/* contact */}
-        <div className="pb-[150vh]">
+        <div id={contactSectionId} className="pb-[150vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
               {/* title */}
