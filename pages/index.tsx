@@ -29,6 +29,7 @@ import {
   Scene,
   ShaderMaterial,
   Texture,
+  UniformsLib,
   Vector2,
   Vector3,
   Vector4,
@@ -299,6 +300,8 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
+
+    ...UniformsLib.fog,
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -498,7 +501,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           position={[0, 0.01, 0]}
         >
           <planeGeometry args={[12, 12]} />
-          <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} />
+          <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} fog />
         </mesh>
       </group>
     )
@@ -722,6 +725,9 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
+
+      <fog args={[0x0e0e1c, 15, 25]} attach="fog" />
+      <color attach="background" args={[0x0e0e1c]} />
     </>
   )
 }

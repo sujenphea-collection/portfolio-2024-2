@@ -7,6 +7,7 @@ varying vec4 v_uv;
 varying vec2 v_uv2;
 
 #include <logdepthbuf_pars_fragment>
+#include <fog_pars_fragment>
 
 /* -------------------------------------------------------------------------- */
 /*                                    utils                                   */
@@ -49,4 +50,5 @@ void main() {
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
+  #include <fog_fragment>
 }
