@@ -298,6 +298,8 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
+    u_scale: { value: 3.0 },
+
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
@@ -499,6 +501,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           onBeforeRender={onReflectorBeforeRender}
           rotation={[Math.PI * -0.5, 0, 0]}
           position={[0, 0.01, 0]}
+          scale={[3, 3, 3]}
         >
           <planeGeometry args={[12, 12]} />
           <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} fog />

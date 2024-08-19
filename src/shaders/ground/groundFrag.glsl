@@ -2,6 +2,7 @@ uniform vec3 u_color;
 uniform sampler2D u_texture;
 uniform sampler2D u_shadowTexture;
 uniform sampler2D u_maskTexture;
+uniform float u_scale; // scales uv for baked texture
 
 varying vec4 v_uv;
 varying vec2 v_uv2;
@@ -25,25 +26,28 @@ vec3 blendOverlay(vec3 base, vec3 blend) {
 /* -------------------------------------------------------------------------- */
 void main() {
 	#include <logdepthbuf_fragment>
-  
-  vec3 color = vec3(0.0);
-  float mask = texture2D(u_maskTexture, v_uv2).r;
 
-  // get shadow alpha
-  vec3 shadows = texture2D(u_shadowTexture, v_uv2).rgb;
-  float alpha = smoothstep(0.1, 1.0, shadows.b);
-  color = vec3(alpha);
+  vec3 color = vec3(0.0);
+
+  vec2 maskUv = (v_uv2 - 0.5) * u_scale + 0.5;
+  float mask = texture2D(u_maskTexture, maskUv).r; 
 
   // get reflection
   vec4 uvOffset = vec4(mask * 0.0, 0.0, 0.0, mask * 0.2);
   vec4 base = texture2DProj(u_texture, v_uv + uvOffset);
   color += base.rgb;
-  
+
   // color overlay
   color = blendOverlay(color, u_color);
 
   // dirt
   color *= mask;
+
+  // get shadow alpha
+  vec2 shadowUv = (v_uv2 - 0.5) * u_scale + 0.5;
+  vec3 shadows = texture2D(u_shadowTexture, shadowUv).rgb;
+  float alpha = smoothstep(0.1, 1.0, shadows.b);
+  color += vec3(alpha);
 
   // apply color
   gl_FragColor = vec4(color, 1.0);
