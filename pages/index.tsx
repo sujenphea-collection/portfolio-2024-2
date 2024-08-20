@@ -575,13 +575,18 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   const screenUniforms = useRef({
     u_texture: { value: null as Texture | null },
-    u_time: { value: 0 },
+    u_texture2: { value: null as Texture | null },
+    u_mixTexture: { value: null as Texture | null },
 
+    u_time: { value: 0 },
     u_showRatio: { value: 0 },
+    u_mixRatio: { value: 0 },
   })
 
   // ui
   const homeUI = useRef(document.getElementById(homeSectionId))
+  const projectsUI = useRef(document.getElementById(projectsSectionId))
+  const projectsIndividualUI = useRef<HTMLElement[]>([])
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -645,6 +650,26 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         screenUniforms.current.u_texture.value = tex
       },
     })
+
+    loader.add("/projects/project2.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+
+        screenUniforms.current.u_texture2.value = tex
+      },
+    })
+
+    loader.add("/textures/transition.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        screenUniforms.current.u_mixTexture.value = tex
+      },
+    })
   }
 
   /* --------------------------------- handle --------------------------------- */
@@ -660,16 +685,34 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeTop = homeBounds?.top ?? 0
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
+    // projects
+    const project1Bounds = projectsIndividualUI.current[0].getBoundingClientRect()
+    const project1Top = project1Bounds.top
+    const project1Height = project1Bounds.height
+
+    // show ratio
     const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
     screenUniforms.current.u_showRatio.value = screenShowRatio
 
     const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
     floorUniforms.current.u_showRatio.value = stageShowRatio
 
+    // mix ratio
+    const ratio = MathUtils.fit(project1Top, 0, -project1Height, 0, 1)
+    screenUniforms.current.u_mixRatio.value = ratio
+
     // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta
   })
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup UI
+  useEffect(() => {
+    Array.from(projectsUI.current?.children || []).forEach((el) => {
+      projectsIndividualUI.current.push(el as HTMLElement)
+    })
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return (

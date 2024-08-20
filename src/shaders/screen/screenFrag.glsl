@@ -1,7 +1,10 @@
 uniform sampler2D u_texture;
-uniform float u_time;
+uniform sampler2D u_texture2;
+uniform sampler2D u_mixTexture;
 
+uniform float u_time;
 uniform float u_showRatio;
+uniform float u_mixRatio;
 
 varying vec2 v_uv;
 varying vec3 v_worldPosition;
@@ -80,4 +83,17 @@ void main() {
 
   // set color
   gl_FragColor = vec4(color - bottom * 0.4, alpha);
+
+  ///
+  float bleed = 0.1;
+  vec4 transitionTex = texture2D(u_mixTexture, v_uv);
+  
+  float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
+  float mixf = clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
+
+  vec4 texel1 = texture2D(u_texture, v_uv);
+  vec4 texel2 = texture2D(u_texture2, v_uv);  
+
+  gl_FragColor = mix(texel1, texel2, 1.0 - mixf);
+  ///
 }
