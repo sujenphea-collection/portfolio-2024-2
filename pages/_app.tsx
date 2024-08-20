@@ -109,7 +109,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* main */}
-      {engineSetup && <main className="relative">{props.children}</main>}
+      {engineSetup && <main className="pointer-events-none relative">{props.children}</main>}
     </>
   )
 }

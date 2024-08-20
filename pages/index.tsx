@@ -1,4 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
+import { easeInOut } from "framer-motion"
 import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
@@ -324,11 +325,16 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     u_scale: { value: 3.0 },
 
+    u_shadowShowRatio: { value: 0 },
+
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
   })
+
+  // ui
+  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -514,7 +520,16 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {})
+  useFrame(() => {
+    const homeBounds = homeUI.current?.getBoundingClientRect()
+
+    // home
+    const homeTop = homeBounds?.top ?? 0
+    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
+
+    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1.8, 2, 0, 1)
+    groundUniforms.current.u_shadowShowRatio.value = stageShowRatio
+  })
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -546,6 +561,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_scale: { value: 0.1 },
     u_time: { value: 0 },
 
+    u_showRatio: { value: 0 },
+
     // color
     color_top: { value: new Color(0xedf2fb) },
     color_bottom: { value: new Color(0x001845) },
@@ -559,7 +576,12 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const screenUniforms = useRef({
     u_texture: { value: null as Texture | null },
     u_time: { value: 0 },
+
+    u_showRatio: { value: 0 },
   })
+
+  // ui
+  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -632,6 +654,19 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
+    const homeBounds = homeUI.current?.getBoundingClientRect()
+
+    // home
+    const homeTop = homeBounds?.top ?? 0
+    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
+
+    const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
+    screenUniforms.current.u_showRatio.value = screenShowRatio
+
+    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
+    floorUniforms.current.u_showRatio.value = stageShowRatio
+
+    // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta
   })
@@ -642,16 +677,31 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       <group>
         {/* floor */}
         <mesh geometry={floorGeometryRef.current ?? undefined} userData={{ reflect: false }}>
-          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
+          <shaderMaterial
+            uniforms={floorUniforms.current}
+            vertexShader={stageVert}
+            fragmentShader={stageFrag}
+            transparent
+          />
         </mesh>
 
-        <mesh geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
-          <shaderMaterial uniforms={floorUniforms.current} vertexShader={stageVert} fragmentShader={stageFrag} />
+        <mesh position={[0, 0.1, 0]} geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
+          <shaderMaterial
+            uniforms={floorUniforms.current}
+            vertexShader={stageVert}
+            fragmentShader={stageFrag}
+            transparent
+          />
         </mesh>
 
         {/* screen */}
         <mesh geometry={screenGeometryRef.current ?? undefined}>
-          <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
         </mesh>
       </group>
     )

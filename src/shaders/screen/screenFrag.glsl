@@ -1,7 +1,10 @@
 uniform sampler2D u_texture;
 uniform float u_time;
 
+uniform float u_showRatio;
+
 varying vec2 v_uv;
+varying vec3 v_worldPosition;
 
 /* -------------------------------------------------------------------------- */
 /*                                    utils                                   */
@@ -37,6 +40,9 @@ float noise(in vec2 st) {
 /*                                    main                                    */
 /* -------------------------------------------------------------------------- */
 void main() {
+  vec3 color = vec3(0.0);
+  float alpha = 0.0;
+
   // get offset
   float offsetX = noise(vec2(u_time * 10.0, v_uv.y * 100.0)) * 0.003
                   + noise(vec2(u_time * 5.0, v_uv * 20.0)) * 0.005;
@@ -57,7 +63,7 @@ void main() {
   float green = texture(u_texture, vec2(x, y)).g;
   float blue = texture(u_texture, vec2(x + colorShift, y)).b;
 
-  vec3 color = vec3(red, green, blue);
+  color += vec3(red, green, blue);
 
   // add scanline
   float scanline = sin(v_uv.y * 1000.0) * 0.01;
@@ -66,6 +72,12 @@ void main() {
   // add static
   color -= noise(v_uv * 1000.0 * noise(vec2(u_time * 100.0))) * 0.05;
 
+  // alpha
+  alpha = u_showRatio;
+
+  // bottom
+  float bottom = 1.0 - smoothstep(0.0, 0.3, v_worldPosition.y);
+
   // set color
-  gl_FragColor = vec4(color, 1.);
+  gl_FragColor = vec4(color - bottom * 0.4, alpha);
 }
