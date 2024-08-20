@@ -113,6 +113,9 @@ void main() {
                       (1.0 - color.r) * 0.4;
   alpha = smoothstep(0.0, 0.1, smoothRatio);
 
+  // bottom
+  float bottom = smoothstep(0.95, 1.0, 1.0 - v_worldPosition.y * 1.0);
+
   // set color
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(color - bottom * 0.3, alpha);
 }
