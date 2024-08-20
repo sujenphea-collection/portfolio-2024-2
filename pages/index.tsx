@@ -1,4 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
+import { easeInOut } from "framer-motion"
 import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
@@ -575,6 +576,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const screenUniforms = useRef({
     u_texture: { value: null as Texture | null },
     u_time: { value: 0 },
+
+    u_showRatio: { value: 0 },
   })
 
   // ui
@@ -657,6 +660,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeTop = homeBounds?.top ?? 0
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
+    const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
+    screenUniforms.current.u_showRatio.value = screenShowRatio
+
     const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
     floorUniforms.current.u_showRatio.value = stageShowRatio
 
@@ -690,7 +696,12 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
         {/* screen */}
         <mesh geometry={screenGeometryRef.current ?? undefined}>
-          <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
         </mesh>
       </group>
     )
