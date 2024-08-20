@@ -324,11 +324,16 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     u_scale: { value: 3.0 },
 
+    u_shadowShowRatio: { value: 0 },
+
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
   })
+
+  // ui
+  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -514,7 +519,16 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {})
+  useFrame(() => {
+    const homeBounds = homeUI.current?.getBoundingClientRect()
+
+    // home
+    const homeTop = homeBounds?.top ?? 0
+    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
+
+    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1.8, 2, 0, 1)
+    groundUniforms.current.u_shadowShowRatio.value = stageShowRatio
+  })
 
   /* ---------------------------------- main ---------------------------------- */
   return (
