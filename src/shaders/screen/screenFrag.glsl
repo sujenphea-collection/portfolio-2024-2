@@ -4,6 +4,7 @@ uniform float u_time;
 uniform float u_showRatio;
 
 varying vec2 v_uv;
+varying vec3 v_worldPosition;
 
 /* -------------------------------------------------------------------------- */
 /*                                    utils                                   */
@@ -74,6 +75,9 @@ void main() {
   // alpha
   alpha = u_showRatio;
 
+  // bottom
+  float bottom = 1.0 - smoothstep(0.0, 0.3, v_worldPosition.y);
+
   // set color
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(color - bottom * 0.4, alpha);
 }
