@@ -581,6 +581,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_time: { value: 0 },
     u_showRatio: { value: 0 },
     u_mixRatio: { value: 0 },
+
+    u_mouse: { value: new Vector2() },
   })
 
   // ui
@@ -738,7 +740,15 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         </mesh>
 
         {/* screen */}
-        <mesh geometry={screenGeometryRef.current ?? undefined}>
+        <mesh
+          geometry={screenGeometryRef.current ?? undefined}
+          onPointerMove={(ev) => {
+            const x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
+            const y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
+
+            screenUniforms.current.u_mouse.value.set(x, y)
+          }}
+        >
           <shaderMaterial
             uniforms={screenUniforms.current}
             vertexShader={screenVert}

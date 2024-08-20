@@ -6,6 +6,8 @@ uniform float u_time;
 uniform float u_showRatio;
 uniform float u_mixRatio;
 
+uniform vec2 u_mouse;
+
 varying vec2 v_uv;
 varying vec3 v_worldPosition;
 
@@ -87,8 +89,18 @@ void main() {
   ///
   float bleed = 0.1;
   vec4 transitionTex = texture2D(u_mixTexture, v_uv);
-  
+
+  // mouse
+  float xDir = u_mouse.x / abs(u_mouse.x);
+  float xMul = clamp(xDir + 1.0, 0.0, 1.0); // 0 if left, 1 otherwise
+
+  // (u_mouse.x - v_uv.x) * u_mouse.x => right
+  // (v_uv.x) * -u_mouse.x            => left
+  float xRatio = (u_mouse.x * xMul + v_uv.x * -xDir) * (u_mouse.x * xDir);
+
+  // mix
   float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
+  ratio += xRatio * (1.0 - u_mixRatio) * 0.5;
   float mixf = clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
 
   vec4 texel1 = texture2D(u_texture, v_uv);
