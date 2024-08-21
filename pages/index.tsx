@@ -731,6 +731,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     velocity.y = clamp(velocity.y, -1, 1)
     screenUniforms.current.u_mouse.value.lerp(velocity, 0.2)
 
+    mouse.current.velocityX *= 0.9
+    mouse.current.velocityY *= 0.9
+
     // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta

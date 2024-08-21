@@ -78,7 +78,7 @@ void main() {
   float mouseRatio = xRatio + yRatio;
 
   float noiseTex = texture(u_noiseTexture, v_uv + u_time * 0.1 * 0.5).r;
-  float timeRatio = noiseTex * abs(sin(u_time)) * 0.5;
+  float timeRatio = noiseTex * sin(u_time) * 0.4;
 
   // - mix 
   // - ref: https://github.com/mrdoob/three.js/blob/master/examples/webgl_postprocessing_transition.html
