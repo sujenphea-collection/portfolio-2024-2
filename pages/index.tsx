@@ -553,6 +553,7 @@ Ground.displayName = "Ground"
 
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
   const screenGeometryRef = useRef<BufferGeometry | null>(null)
@@ -600,6 +601,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     prevX: 0,
     prevY: 0,
   })
+
+  const projectTextures = useRef<(Texture | null)[]>([])
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -661,6 +664,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.userData.video.loop = true
 
         screenUniforms.current.u_texture.value = tex
+        projectTextures.current[0] = tex
+        projectTextures.current[2] = tex
       },
     })
 
@@ -670,6 +675,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.flipY = true
 
         screenUniforms.current.u_texture2.value = tex
+        projectTextures.current[1] = tex
       },
     })
 
@@ -709,11 +715,6 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeTop = homeBounds?.top ?? 0
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
-    // projects
-    const project1Bounds = projectsIndividualUI.current[0].getBoundingClientRect()
-    const project1Top = project1Bounds.top
-    const project1Height = project1Bounds.height
-
     // show ratio
     const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
     screenUniforms.current.u_showRatio.value = screenShowRatio
@@ -722,7 +723,22 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     floorUniforms.current.u_showRatio.value = stageShowRatio
 
     // mix ratio
-    const ratio = MathUtils.fit(project1Top, 0, -project1Height, 0, 1)
+    let ratio = 0
+    let index = 0
+    projectsIndividualUI.current.forEach((el, i) => {
+      if (window.scrollY > el.offsetTop) {
+        index = i
+      }
+    })
+
+    if (index <= projectTextures.current.length - 1) {
+      screenUniforms.current.u_texture.value = projectTextures.current[index - 1]
+      screenUniforms.current.u_texture2.value = projectTextures.current[index]
+
+      const bounds = projectsIndividualUI.current[index].getBoundingClientRect()
+      ratio = MathUtils.fit(bounds.top, 0, -bounds.height * 0.2, 0, 1)
+    }
+
     screenUniforms.current.u_mixRatio.value = ratio
 
     // mouse
@@ -744,6 +760,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   useEffect(() => {
     Array.from(projectsUI.current?.children || []).forEach((el) => {
       projectsIndividualUI.current.push(el as HTMLElement)
+      projectTextures.current.push(null)
     })
   }, [])
 
@@ -1125,6 +1142,23 @@ export default function Home() {
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
                 >
                   Project 2
+                </h2>
+
+                {/* description */}
+                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
+            </div>
+          </div>
+
+          {/* project 3 */}
+          <div className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  Project 3
                 </h2>
 
                 {/* description */}
