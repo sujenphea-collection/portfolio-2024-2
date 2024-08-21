@@ -1,7 +1,13 @@
 uniform sampler2D u_texture;
-uniform float u_time;
+uniform sampler2D u_texture2;
+uniform sampler2D u_mixTexture;
+uniform sampler2D u_noiseTexture;
 
+uniform float u_time;
 uniform float u_showRatio;
+uniform float u_mixRatio;
+
+uniform vec2 u_mouse;
 
 varying vec2 v_uv;
 varying vec3 v_worldPosition;
@@ -54,20 +60,49 @@ void main() {
   // get sandy
   float sandy = random(v_uv) * sin(u_time * 1.0) * 0.005;
 
+  // transition
+  float bleed = 0.1;
+  vec4 transitionTex = texture(u_mixTexture, v_uv);
+
+  // - mouse
+  vec2 mouse = u_mouse;
+  vec2 gridUv = vec2(fract(v_uv.x * 100.0), fract(v_uv.y * 100.0));
+  vec2 dir = vec2(mouse.x / abs(mouse.x), mouse.y / abs(mouse.y));
+  float xMul = clamp(dir.x + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
+  float yMul = clamp(dir.y + 1.0, 0.0, 1.0);
+
+  // (u_mouse.x - v_uv.x) * u_mouse.x => left
+  // (v_uv.x) * -u_mouse.x            => right
+  float xRatio = (mouse.x * xMul + gridUv.x * -dir.x) * (mouse.x * dir.x);
+  float yRatio = (mouse.y * yMul + gridUv.y * -dir.y) * (mouse.y * dir.y);
+  float mouseRatio = xRatio + yRatio;
+
+  float noiseTex = texture(u_noiseTexture, v_uv + u_time * 0.1 * 0.5).r;
+  float timeRatio = noiseTex * sin(u_time) * 0.4;
+
+  // - mix 
+  // - ref: https://github.com/mrdoob/three.js/blob/master/examples/webgl_postprocessing_transition.html
+  float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
+  ratio += mouseRatio * (1.0 - u_mixRatio) * 0.5;
+  ratio += timeRatio * (1.0 - u_mixRatio) * 0.5;
+  float mixf = 1.0 - clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
+
   // get texture
-  float x = v_uv.x + offsetX + sandy;
-  float y = v_uv.y + offsetY;
+  vec2 offsetUv = vec2(v_uv.x + offsetX + sandy, v_uv.y + offsetY);
   float colorShift = 0.003;
 
-  float red = texture(u_texture, vec2(x - colorShift, y)).r;
-  float green = texture(u_texture, vec2(x, y)).g;
-  float blue = texture(u_texture, vec2(x + colorShift, y)).b;
-
-  color += vec3(red, green, blue);
+  vec3 texel1 = vec3(texture(u_texture, vec2(offsetUv.x - colorShift, offsetUv.y)).r,
+                     texture(u_texture, vec2(offsetUv.x, offsetUv.y)).g,
+                     texture(u_texture, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
+  vec3 texel2 = vec3(texture(u_texture2, vec2(offsetUv.x - colorShift, offsetUv.y)).r,
+                     texture(u_texture2, vec2(offsetUv.x, offsetUv.y)).g,
+                     texture(u_texture2, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
+  color += mix(texel1, texel2, mixf);
 
   // add scanline
-  float scanline = sin(v_uv.y * 1000.0) * 0.01;
-  color += scanline;
+  float scanline = sin(v_uv.y * 1000.0);
+  scanline += cos(v_uv.x * 1000.0) * 0.1;
+  color += scanline * vec3(0.05);
 
   // add static
   color -= noise(v_uv * 1000.0 * noise(vec2(u_time * 100.0))) * 0.05;

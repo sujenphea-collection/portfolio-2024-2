@@ -553,6 +553,7 @@ Ground.displayName = "Ground"
 
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
   const screenGeometryRef = useRef<BufferGeometry | null>(null)
@@ -575,13 +576,33 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   const screenUniforms = useRef({
     u_texture: { value: null as Texture | null },
-    u_time: { value: 0 },
+    u_texture2: { value: null as Texture | null },
+    u_mixTexture: { value: null as Texture | null },
+    u_noiseTexture: { value: null as Texture | null },
 
+    u_time: { value: 0 },
     u_showRatio: { value: 0 },
+    u_mixRatio: { value: 0 },
+
+    u_mouse: { value: new Vector2() },
   })
 
   // ui
   const homeUI = useRef(document.getElementById(homeSectionId))
+  const projectsUI = useRef(document.getElementById(projectsSectionId))
+  const projectsIndividualUI = useRef<HTMLElement[]>([])
+
+  // params
+  const mouse = useRef({
+    x: 0,
+    y: 0,
+    velocityX: 0,
+    velocityY: 0,
+    prevX: 0,
+    prevY: 0,
+  })
+
+  const projectTextures = useRef<(Texture | null)[]>([])
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -643,6 +664,40 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.userData.video.loop = true
 
         screenUniforms.current.u_texture.value = tex
+        projectTextures.current[0] = tex
+        projectTextures.current[2] = tex
+      },
+    })
+
+    loader.add("/projects/project2.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+
+        screenUniforms.current.u_texture2.value = tex
+        projectTextures.current[1] = tex
+      },
+    })
+
+    loader.add("/textures/transition.jpg", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        screenUniforms.current.u_mixTexture.value = tex
+      },
+    })
+
+    loader.add("/textures/noise.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        screenUniforms.current.u_noiseTexture.value = tex
       },
     })
   }
@@ -660,16 +715,54 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeTop = homeBounds?.top ?? 0
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
+    // show ratio
     const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
     screenUniforms.current.u_showRatio.value = screenShowRatio
 
     const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
     floorUniforms.current.u_showRatio.value = stageShowRatio
 
+    // mix ratio
+    let ratio = 0
+    let index = 0
+    projectsIndividualUI.current.forEach((el, i) => {
+      if (window.scrollY > el.offsetTop) {
+        index = i
+      }
+    })
+
+    if (index <= projectTextures.current.length - 1) {
+      screenUniforms.current.u_texture.value = projectTextures.current[index - 1]
+      screenUniforms.current.u_texture2.value = projectTextures.current[index]
+
+      const bounds = projectsIndividualUI.current[index].getBoundingClientRect()
+      ratio = MathUtils.fit(bounds.top, 0, -bounds.height * 0.2, 0, 1)
+    }
+
+    screenUniforms.current.u_mixRatio.value = ratio
+
+    // mouse
+    const velocity = { x: mouse.current.velocityX * 10, y: mouse.current.velocityY * 10 }
+    velocity.x = clamp(velocity.x, -1, 1)
+    velocity.y = clamp(velocity.y, -1, 1)
+    screenUniforms.current.u_mouse.value.lerp(velocity, 0.2)
+
+    mouse.current.velocityX *= 0.9
+    mouse.current.velocityY *= 0.9
+
     // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta
   })
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup UI
+  useEffect(() => {
+    Array.from(projectsUI.current?.children || []).forEach((el) => {
+      projectsIndividualUI.current.push(el as HTMLElement)
+      projectTextures.current.push(null)
+    })
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -695,7 +788,19 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         </mesh>
 
         {/* screen */}
-        <mesh geometry={screenGeometryRef.current ?? undefined}>
+        <mesh
+          geometry={screenGeometryRef.current ?? undefined}
+          onPointerMove={(ev) => {
+            mouse.current.x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
+            mouse.current.y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
+
+            mouse.current.velocityX = mouse.current.x - mouse.current.prevX
+            mouse.current.velocityY = mouse.current.y - mouse.current.prevY
+
+            mouse.current.prevX = mouse.current.x
+            mouse.current.prevY = mouse.current.y
+          }}
+        >
           <shaderMaterial
             uniforms={screenUniforms.current}
             vertexShader={screenVert}
@@ -1014,7 +1119,12 @@ export default function Home() {
           {/* project 1 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1023,7 +1133,7 @@ export default function Home() {
                 </h2>
 
                 {/* description */}
-                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
               </div>
             </div>
           </div>
@@ -1031,7 +1141,12 @@ export default function Home() {
           {/* project 2 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1040,7 +1155,29 @@ export default function Home() {
                 </h2>
 
                 {/* description */}
-                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+              </div>
+            </div>
+          </div>
+
+          {/* project 3 */}
+          <div className="pb-[150vh]">
+            <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
+                {/* title */}
+                <h2
+                  className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+                >
+                  Project 3
+                </h2>
+
+                {/* description */}
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
               </div>
             </div>
           </div>
@@ -1051,7 +1188,12 @@ export default function Home() {
           {/* intro */}
           <div id={aboutIntroId} className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1068,7 +1210,12 @@ export default function Home() {
           {/* content */}
           <div id={aboutContentId} className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1086,7 +1233,9 @@ export default function Home() {
         {/* contact */}
         <div id={contactSectionId} className="pb-[150vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-            <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+            <div
+              className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
+            >
               {/* title */}
               <h2
                 className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
