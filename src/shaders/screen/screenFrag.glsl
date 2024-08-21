@@ -65,7 +65,7 @@ void main() {
 
   // - mouse
   vec2 mouse = u_mouse;
-  vec2 gridUv = vec2(fract(v_uv.x * 20.0), fract(v_uv.y * 20.0));
+  vec2 gridUv = vec2(fract(v_uv.x * 100.0), fract(v_uv.y * 100.0));
   vec2 dir = vec2(mouse.x / abs(mouse.x), mouse.y / abs(mouse.y));
   float xMul = clamp(dir.x + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
   float yMul = clamp(dir.y + 1.0, 0.0, 1.0);

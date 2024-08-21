@@ -590,6 +590,16 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const projectsUI = useRef(document.getElementById(projectsSectionId))
   const projectsIndividualUI = useRef<HTMLElement[]>([])
 
+  // params
+  const mouse = useRef({
+    x: 0,
+    y: 0,
+    velocityX: 0,
+    velocityY: 0,
+    prevX: 0,
+    prevY: 0,
+  })
+
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
     loader.add("/models/stage.obj", ItemType.Obj, {
@@ -703,6 +713,12 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const ratio = MathUtils.fit(project1Top, 0, -project1Height, 0, 1)
     screenUniforms.current.u_mixRatio.value = ratio
 
+    // mouse
+    const velocity = { x: mouse.current.velocityX * 10, y: mouse.current.velocityY * 10 }
+    velocity.x = clamp(velocity.x, -1, 1)
+    velocity.y = clamp(velocity.y, -1, 1)
+    screenUniforms.current.u_mouse.value.lerp(velocity, 0.2)
+
     // update uniforms
     screenUniforms.current.u_time.value += delta
     floorUniforms.current.u_time.value += delta
@@ -743,10 +759,14 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         <mesh
           geometry={screenGeometryRef.current ?? undefined}
           onPointerMove={(ev) => {
-            const x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
-            const y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
+            mouse.current.x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
+            mouse.current.y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
 
-            screenUniforms.current.u_mouse.value.set(x, y)
+            mouse.current.velocityX = mouse.current.x - mouse.current.prevX
+            mouse.current.velocityY = mouse.current.y - mouse.current.prevY
+
+            mouse.current.prevX = mouse.current.x
+            mouse.current.prevY = mouse.current.y
           }}
         >
           <shaderMaterial
