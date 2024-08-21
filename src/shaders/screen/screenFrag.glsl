@@ -59,16 +59,39 @@ void main() {
   // get sandy
   float sandy = random(v_uv) * sin(u_time * 1.0) * 0.005;
 
+  // transition
+  float bleed = 0.1;
+  vec4 transitionTex = texture(u_mixTexture, v_uv);
+
+  // - mouse
+  vec2 mouse = u_mouse;
+  vec2 gridUv = vec2(fract(v_uv.x * 20.0), fract(v_uv.y * 20.0));
+  vec2 dir = vec2(mouse.x / abs(mouse.x), mouse.y / abs(mouse.y));
+  float xMul = clamp(dir.x + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
+  float yMul = clamp(dir.y + 1.0, 0.0, 1.0);
+
+  // (u_mouse.x - v_uv.x) * u_mouse.x => left
+  // (v_uv.x) * -u_mouse.x            => right
+  float xRatio = (mouse.x * xMul + gridUv.x * -dir.x) * (mouse.x * dir.x);
+  float yRatio = (mouse.y * yMul + gridUv.y * -dir.y) * (mouse.y * dir.y);
+  float mouseRatio = xRatio + yRatio;
+
+  // - mix
+  float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
+  ratio += mouseRatio * (1.0 - u_mixRatio) * 0.5;
+  float mixf = 1.0 - clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
+
   // get texture
-  float x = v_uv.x + offsetX + sandy;
-  float y = v_uv.y + offsetY;
+  vec2 offsetUv = vec2(v_uv.x + offsetX + sandy, v_uv.y + offsetY);
   float colorShift = 0.003;
 
-  float red = texture(u_texture, vec2(x - colorShift, y)).r;
-  float green = texture(u_texture, vec2(x, y)).g;
-  float blue = texture(u_texture, vec2(x + colorShift, y)).b;
-
-  color += vec3(red, green, blue);
+  vec3 texel1 = vec3(texture(u_texture, vec2(offsetUv.x - colorShift, offsetUv.y)).r,
+                     texture(u_texture, vec2(offsetUv.x, offsetUv.y)).g,
+                     texture(u_texture, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
+  vec3 texel2 = vec3(texture(u_texture2, vec2(offsetUv.x - colorShift, offsetUv.y)).r,
+                     texture(u_texture2, vec2(offsetUv.x, offsetUv.y)).g,
+                     texture(u_texture2, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
+  color += mix(texel1, texel2, mixf);
 
   // add scanline
   float scanline = sin(v_uv.y * 1000.0) * 0.01;
@@ -85,32 +108,4 @@ void main() {
 
   // set color
   gl_FragColor = vec4(color - bottom * 0.4, alpha);
-
-  ///
-  float bleed = 0.1;
-  vec4 transitionTex = texture2D(u_mixTexture, v_uv);
-
-  // mouse
-  vec2 mouse = u_mouse;
-  vec2 uv = vec2(fract(v_uv.x * 20.0), fract(v_uv.y * 20.0));
-  vec2 dir = vec2(mouse.x / abs(mouse.x), mouse.y / abs(mouse.y));
-  float xMul = clamp(dir.x + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
-  float yMul = clamp(dir.y + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
-
-  // (u_mouse.x - v_uv.x) * u_mouse.x => left
-  // (v_uv.x) * -u_mouse.x            => right
-  float xRatio = (mouse.x * xMul + uv.x * -dir.x) * (mouse.x * dir.x);
-  float yRatio = (mouse.y * yMul + uv.y * -dir.y) * (mouse.y * dir.y);
-  float mouseRatio = xRatio + yRatio;
-
-  // mix
-  float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
-  ratio += mouseRatio * (1.0 - u_mixRatio) * 0.5;
-  float mixf = clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
-
-  vec4 texel1 = texture2D(u_texture, v_uv);
-  vec4 texel2 = texture2D(u_texture2, v_uv);  
-
-  gl_FragColor = mix(texel1, texel2, 1.0 - mixf);
-  ///
 }
