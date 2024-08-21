@@ -100,8 +100,9 @@ void main() {
   color += mix(texel1, texel2, mixf);
 
   // add scanline
-  float scanline = sin(v_uv.y * 1000.0) * 0.01;
-  color += scanline;
+  float scanline = sin(v_uv.y * 1000.0);
+  scanline += cos(v_uv.x * 1000.0) * 0.1;
+  color += scanline * vec3(0.05);
 
   // add static
   color -= noise(v_uv * 1000.0 * noise(vec2(u_time * 100.0))) * 0.05;
