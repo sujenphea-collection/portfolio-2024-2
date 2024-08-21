@@ -1,6 +1,7 @@
 uniform sampler2D u_texture;
 uniform sampler2D u_texture2;
 uniform sampler2D u_mixTexture;
+uniform sampler2D u_noiseTexture;
 
 uniform float u_time;
 uniform float u_showRatio;
@@ -76,9 +77,14 @@ void main() {
   float yRatio = (mouse.y * yMul + gridUv.y * -dir.y) * (mouse.y * dir.y);
   float mouseRatio = xRatio + yRatio;
 
-  // - mix
+  float noiseTex = texture(u_noiseTexture, v_uv + u_time * 0.1 * 0.5).r;
+  float timeRatio = noiseTex * abs(sin(u_time)) * 0.5;
+
+  // - mix 
+  // - ref: https://github.com/mrdoob/three.js/blob/master/examples/webgl_postprocessing_transition.html
   float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
   ratio += mouseRatio * (1.0 - u_mixRatio) * 0.5;
+  ratio += timeRatio * (1.0 - u_mixRatio) * 0.5;
   float mixf = 1.0 - clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
 
   // get texture

@@ -577,6 +577,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_texture: { value: null as Texture | null },
     u_texture2: { value: null as Texture | null },
     u_mixTexture: { value: null as Texture | null },
+    u_noiseTexture: { value: null as Texture | null },
 
     u_time: { value: 0 },
     u_showRatio: { value: 0 },
@@ -672,7 +673,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       },
     })
 
-    loader.add("/textures/transition.png", ItemType.Texture, {
+    loader.add("/textures/transition.jpg", ItemType.Texture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
         tex.flipY = true
@@ -680,6 +681,17 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         tex.wrapT = RepeatWrapping
 
         screenUniforms.current.u_mixTexture.value = tex
+      },
+    })
+
+    loader.add("/textures/noise.png", ItemType.Texture, {
+      onLoad: (_tex) => {
+        const tex = _tex as Texture
+        tex.flipY = true
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+
+        screenUniforms.current.u_noiseTexture.value = tex
       },
     })
   }
