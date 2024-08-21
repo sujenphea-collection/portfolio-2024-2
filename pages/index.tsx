@@ -1119,7 +1119,12 @@ export default function Home() {
           {/* project 1 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1128,7 +1133,7 @@ export default function Home() {
                 </h2>
 
                 {/* description */}
-                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
               </div>
             </div>
           </div>
@@ -1136,7 +1141,12 @@ export default function Home() {
           {/* project 2 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1145,7 +1155,7 @@ export default function Home() {
                 </h2>
 
                 {/* description */}
-                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
               </div>
             </div>
           </div>
@@ -1153,7 +1163,12 @@ export default function Home() {
           {/* project 3 */}
           <div className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1162,7 +1177,7 @@ export default function Home() {
                 </h2>
 
                 {/* description */}
-                <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
+                <h4 className={cn("max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
               </div>
             </div>
           </div>
@@ -1173,7 +1188,12 @@ export default function Home() {
           {/* intro */}
           <div id={aboutIntroId} className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1190,7 +1210,12 @@ export default function Home() {
           {/* content */}
           <div id={aboutContentId} className="pb-[150vh]">
             <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-              <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+              <div
+                className={cn(
+                  "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                  "flex flex-col items-start"
+                )}
+              >
                 {/* title */}
                 <h2
                   className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
@@ -1208,7 +1233,9 @@ export default function Home() {
         {/* contact */}
         <div id={contactSectionId} className="pb-[150vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-            <div className={cn("absolute left-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}>
+            <div
+              className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
+            >
               {/* title */}
               <h2
                 className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
