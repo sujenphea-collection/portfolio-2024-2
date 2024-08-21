@@ -91,18 +91,21 @@ void main() {
   vec4 transitionTex = texture2D(u_mixTexture, v_uv);
 
   // mouse
-  float mouseX = u_mouse.x;
-  float uvX = fract(v_uv.x * 20.0);
-  float xDir = mouseX / abs(mouseX);
-  float xMul = clamp(xDir + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
+  vec2 mouse = u_mouse;
+  vec2 uv = vec2(fract(v_uv.x * 20.0), fract(v_uv.y * 20.0));
+  vec2 dir = vec2(mouse.x / abs(mouse.x), mouse.y / abs(mouse.y));
+  float xMul = clamp(dir.x + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
+  float yMul = clamp(dir.y + 1.0, 0.0, 1.0); // 0 if right, 1 otherwise
 
   // (u_mouse.x - v_uv.x) * u_mouse.x => left
   // (v_uv.x) * -u_mouse.x            => right
-  float xRatio = (mouseX * xMul + uvX * -xDir) * (mouseX * xDir);
+  float xRatio = (mouse.x * xMul + uv.x * -dir.x) * (mouse.x * dir.x);
+  float yRatio = (mouse.y * yMul + uv.y * -dir.y) * (mouse.y * dir.y);
+  float mouseRatio = xRatio + yRatio;
 
   // mix
   float ratio = u_mixRatio * (1.0 + bleed * 2.0) - bleed;
-  ratio += xRatio * (1.0 - u_mixRatio) * 0.5;
+  ratio += mouseRatio * (1.0 - u_mixRatio) * 0.5;
   float mixf = clamp((transitionTex.r - ratio) * (1.0 / bleed), 0.0, 1.0);
 
   vec4 texel1 = texture2D(u_texture, v_uv);
