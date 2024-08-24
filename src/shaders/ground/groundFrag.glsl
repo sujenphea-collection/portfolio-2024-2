@@ -18,7 +18,6 @@ varying vec3 v_pos;
 varying vec3 v_normal;
 
 #include <logdepthbuf_pars_fragment>
-#include <fog_pars_fragment>
 #include <lights>
 
 /* -------------------------------------------------------------------------- */
@@ -80,5 +79,4 @@ void main() {
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
-  #include <fog_fragment>
 }

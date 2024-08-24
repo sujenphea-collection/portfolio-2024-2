@@ -7,7 +7,6 @@ varying vec3 v_normal;
 
 #include <common>
 #include <logdepthbuf_pars_vertex>
-#include <fog_pars_vertex>
 
 void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -20,5 +19,4 @@ void main() {
   #include <logdepthbuf_vertex>
   #include <begin_vertex>
   #include <project_vertex>
-  #include <fog_vertex>
 }

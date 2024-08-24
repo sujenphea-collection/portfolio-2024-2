@@ -26,7 +26,6 @@ import {
   Scene,
   ShaderMaterial,
   Texture,
-  UniformsLib,
   Vector2,
   Vector3,
   Vector3Like,
@@ -328,8 +327,6 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
-
-    ...UniformsLib.fog,
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -939,9 +936,6 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
-
-      {/* <fog args={[0x090929, 15, 25]} attach="fog" />
-      <color attach="background" args={[0x090929]} /> */}
     </>
   )
 }
