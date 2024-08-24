@@ -319,7 +319,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const groundMesh = useRef<Mesh | null>(null)
 
   const groundUniforms = useRef({
-    u_color: { value: new Color(0x7f7f7f) },
+    u_color: { value: new Color(0xffffff) },
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
@@ -955,8 +955,8 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
 
-      <fog args={[0x090929, 15, 25]} attach="fog" />
-      <color attach="background" args={[0x090929]} />
+      {/* <fog args={[0x090929, 15, 25]} attach="fog" />
+      <color attach="background" args={[0x090929]} /> */}
     </>
   )
 }

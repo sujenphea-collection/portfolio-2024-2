@@ -3,8 +3,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { AppProps } from "next/app"
 import Head from "next/head"
 import { ReactNode, useCallback, useEffect, useState } from "react"
-import { PerspectiveCamera } from "three"
+import { PerspectiveCamera, ShaderChunk } from "three"
 import { r3f } from "../src/experience/Three"
+import lights from "../src/shaders/utils/lights.glsl"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
@@ -51,6 +52,11 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   // setup
   useEffect(() => {
     Properties.gl = gl
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const shaderChunk = ShaderChunk as any
+    shaderChunk.lights = lights
+
     props.onEngineSetup()
   }, [gl, props])
 
