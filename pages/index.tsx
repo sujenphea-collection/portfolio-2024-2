@@ -1,5 +1,4 @@
 import { useFrame, useThree } from "@react-three/fiber"
-import { easeInOut } from "framer-motion"
 import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
@@ -325,16 +324,13 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     u_scale: { value: 3.0 },
 
-    u_shadowShowRatio: { value: 0 },
+    u_shadowShowRatio: { value: 1 },
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
   })
-
-  // ui
-  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -350,7 +346,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       },
     })
 
-    loader.add("/textures/floor.jpg", ItemType.Texture, {
+    loader.add("/textures/floor.png", ItemType.Texture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
         tex.flipY = true
@@ -519,18 +515,6 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     },
   }))
 
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
-    const homeBounds = homeUI.current?.getBoundingClientRect()
-
-    // home
-    const homeTop = homeBounds?.top ?? 0
-    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
-
-    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1.8, 2, 0, 1)
-    groundUniforms.current.u_shadowShowRatio.value = stageShowRatio
-  })
-
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
@@ -581,7 +565,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_noiseTexture: { value: null as Texture | null },
 
     u_time: { value: 0 },
-    u_showRatio: { value: 0 },
+    u_showRatio: { value: 1 },
     u_mixRatio: { value: 0 },
 
     u_mouse: { value: new Vector2() },
@@ -716,8 +700,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
     // show ratio
-    const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
-    screenUniforms.current.u_showRatio.value = screenShowRatio
+    // const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
+    // screenUniforms.current.u_showRatio.value = screenShowRatio
 
     const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
     floorUniforms.current.u_showRatio.value = stageShowRatio
@@ -732,7 +716,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
 
     if (index <= projectTextures.current.length - 1) {
-      screenUniforms.current.u_texture.value = projectTextures.current[index - 1]
+      screenUniforms.current.u_texture.value =
+        index <= 0 ? projectTextures.current[0] : projectTextures.current[index - 1]
       screenUniforms.current.u_texture2.value = projectTextures.current[index]
 
       const bounds = projectsIndividualUI.current[index].getBoundingClientRect()
