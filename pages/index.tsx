@@ -3,6 +3,7 @@ import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
   AddEquation,
+  AdditiveBlending,
   BufferGeometry,
   Color,
   CustomBlending,
@@ -35,12 +36,14 @@ import {
   WebGLRenderTarget,
   ZeroFactor,
 } from "three"
-import { clamp } from "three/src/math/MathUtils"
+import { clamp, randFloat } from "three/src/math/MathUtils"
 import { Three } from "../src/experience/Three"
 import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
 import groundFrag from "../src/shaders/ground/groundFrag.glsl"
 import groundVert from "../src/shaders/ground/groundVert.glsl"
+import particlesFrag from "../src/shaders/particles/particlesFrag.glsl"
+import particlesVert from "../src/shaders/particles/particlesVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
@@ -105,6 +108,87 @@ const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
+const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
+  const particlesUniforms = useRef({
+    u_time: { value: 0 },
+  })
+
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = () => {}
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItems,
+  }))
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame((_, delta) => {
+    particlesUniforms.current.u_time.value += delta
+  })
+
+  /* --------------------------------- effects -------------------------------- */
+  useEffect(() => {
+    if (!props.show) {
+      return
+    }
+
+    const refGeometry = new PlaneGeometry(0.01, 0.01)
+    const geometry = particlesGeometryRef.current ?? new InstancedBufferGeometry()
+
+    Object.keys(refGeometry.attributes).forEach((attr) => {
+      geometry.setAttribute(attr, refGeometry.getAttribute(attr))
+    })
+    geometry.setIndex(refGeometry.index)
+
+    const instances = 800
+    const instancePositions = new Float32Array(instances * 3)
+    const instanceRands = new Float32Array(instances * 1)
+    const instanceOpacity = new Float32Array(instances * 1)
+    const instanceScale = new Float32Array(instances * 1)
+    for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
+      instancePositions[i3 + 0] = randFloat(-5, 2)
+      instancePositions[i3 + 1] = 2.5
+      instancePositions[i3 + 2] = randFloat(-4, 4)
+
+      instanceRands[i] = randFloat(0, 5)
+      instanceOpacity[i] = randFloat(0.4, 1.0)
+      instanceScale[i] = randFloat(0.6, 1.0)
+    }
+
+    geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePositions, 3))
+    geometry.setAttribute("a_instanceRand", new InstancedBufferAttribute(instanceRands, 1))
+    geometry.setAttribute("a_instanceOpacity", new InstancedBufferAttribute(instanceOpacity, 1))
+    geometry.setAttribute("a_instanceScale", new InstancedBufferAttribute(instanceOpacity, 1))
+    geometry.instanceCount = instances
+
+    // set geometry
+    particlesGeometryRef.current = geometry
+  }, [props.show])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <mesh renderOrder={10} frustumCulled={false} userData={{ reflect: false }}>
+          <instancedBufferGeometry ref={particlesGeometryRef} />
+          <shaderMaterial
+            uniforms={particlesUniforms.current}
+            vertexShader={particlesVert}
+            fragmentShader={particlesFrag}
+            transparent
+            depthTest={false}
+            depthWrite={false}
+            blending={AdditiveBlending}
+          />
+        </mesh>
+      </group>
+    )
+  )
+})
+Particles.displayName = "Particles"
+
 const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   // scene
@@ -809,6 +893,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   /* ---------------------------------- refs ---------------------------------- */
   // scene
+  const particlesRef = useRef<ExperienceRef | null>(null)
   const dirtRef = useRef<ExperienceRef | null>(null)
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
@@ -825,6 +910,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
     // resize scenes
+    particlesRef.current?.resize?.(window.innerWidth, window.innerHeight)
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
     groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
@@ -905,6 +991,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
+    particlesRef.current?.loadItems(props.loader)
     dirtRef.current?.loadItems(props.loader)
     groundRef.current?.loadItems(props.loader)
     stageRef.current?.loadItems(props.loader)
@@ -940,6 +1027,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   return (
     <>
       {/* scene */}
+      <Particles ref={particlesRef} show={props.show} />
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
