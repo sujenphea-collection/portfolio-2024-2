@@ -133,7 +133,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       return
     }
 
-    const refGeometry = new PlaneGeometry(0.1, 0.1)
+    const refGeometry = new PlaneGeometry(0.01, 0.01)
     const geometry = particlesGeometryRef.current ?? new InstancedBufferGeometry()
 
     Object.keys(refGeometry.attributes).forEach((attr) => {
@@ -141,19 +141,22 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
     geometry.setIndex(refGeometry.index)
 
-    const instances = 32
+    const instances = 300
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
+    const instanceOpacity = new Float32Array(instances * 1)
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
       instancePositions[i3 + 0] = randFloat(-10, 2)
       instancePositions[i3 + 1] = 2.5
-      instancePositions[i3 + 2] = randFloat(-5, 5)
+      instancePositions[i3 + 2] = randFloat(0, 10)
 
       instanceRands[i] = randFloat(0, 5)
+      instanceOpacity[i] = randFloat(0.4, 1.0)
     }
 
     geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePositions, 3))
     geometry.setAttribute("a_instanceRand", new InstancedBufferAttribute(instanceRands, 1))
+    geometry.setAttribute("a_instanceOpacity", new InstancedBufferAttribute(instanceOpacity, 1))
     geometry.instanceCount = instances
 
     // set geometry

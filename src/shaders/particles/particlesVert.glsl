@@ -1,9 +1,11 @@
 attribute vec3 a_instancePosition;
 attribute float a_instanceRand;
+attribute float a_instanceOpacity;
 
 uniform float u_time;
 
 varying vec3 v_pos;
+varying float v_opacity;
 
 void main() {
   vec3 pos = position + a_instancePosition;
@@ -13,10 +15,11 @@ void main() {
 
   pos.x += progress * 0.8;
   pos.y -= progress;
-  pos.z -= progress;
+  pos.z -= progress * 0.2;
   
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   // set varyings
   v_pos = (modelViewMatrix * vec4(pos, 1.0)).xyz;
+  v_opacity = a_instanceOpacity;
 }
