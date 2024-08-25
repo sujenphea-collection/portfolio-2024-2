@@ -1,5 +1,4 @@
 import { useFrame, useThree } from "@react-three/fiber"
-import { easeInOut } from "framer-motion"
 import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
@@ -63,9 +62,13 @@ type ExperienceRef = {
 /*                                  constants                                 */
 /* -------------------------------------------------------------------------- */
 const CameraPositions = {
+  intro: {
+    position: { x: -0.14895584310989712, y: 7.122215642812359, z: 15.57179759908457 },
+    rotation: { x: -0.42897346309670187, y: -0.008698803964670862, z: -0.003978580446027203 },
+  },
   home: {
-    position: { x: -8.395355214815083, y: 3.3579525957858896, z: 5.489054327474239 },
-    rotation: { x: -0.5321868791684208, y: -1.0205317487831038, z: -0.4651942426903008 },
+    position: { x: -0.034203410629448434, y: 1.2267996112598016, z: 3.6977443998667225 },
+    rotation: { x: -0.21248504785893402, y: -0.012491264825962377, z: -0.002694810971032839 },
   },
   projects: {
     position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
@@ -319,22 +322,19 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const groundMesh = useRef<Mesh | null>(null)
 
   const groundUniforms = useRef({
-    u_color: { value: new Color(0x7f7f7f) },
+    u_color: { value: new Color(0xffffff) },
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
     u_scale: { value: 3.0 },
 
-    u_shadowShowRatio: { value: 0 },
+    u_shadowShowRatio: { value: 1 },
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
   })
-
-  // ui
-  const homeUI = useRef(document.getElementById(homeSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -350,7 +350,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       },
     })
 
-    loader.add("/textures/floor.jpg", ItemType.Texture, {
+    loader.add("/textures/floor.png", ItemType.Texture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
         tex.flipY = true
@@ -519,18 +519,6 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     },
   }))
 
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
-    const homeBounds = homeUI.current?.getBoundingClientRect()
-
-    // home
-    const homeTop = homeBounds?.top ?? 0
-    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
-
-    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1.8, 2, 0, 1)
-    groundUniforms.current.u_shadowShowRatio.value = stageShowRatio
-  })
-
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
@@ -562,7 +550,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_scale: { value: 0.1 },
     u_time: { value: 0 },
 
-    u_showRatio: { value: 0 },
+    u_showRatio: { value: 1 },
 
     // color
     color_top: { value: new Color(0xedf2fb) },
@@ -581,7 +569,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     u_noiseTexture: { value: null as Texture | null },
 
     u_time: { value: 0 },
-    u_showRatio: { value: 0 },
+    u_showRatio: { value: 1 },
     u_mixRatio: { value: 0 },
 
     u_mouse: { value: new Vector2() },
@@ -716,8 +704,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
 
     // show ratio
-    const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
-    screenUniforms.current.u_showRatio.value = screenShowRatio
+    // const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
+    // screenUniforms.current.u_showRatio.value = screenShowRatio
 
     const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
     floorUniforms.current.u_showRatio.value = stageShowRatio
@@ -732,7 +720,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
 
     if (index <= projectTextures.current.length - 1) {
-      screenUniforms.current.u_texture.value = projectTextures.current[index - 1]
+      screenUniforms.current.u_texture.value =
+        index <= 0 ? projectTextures.current[0] : projectTextures.current[index - 1]
       screenUniforms.current.u_texture2.value = projectTextures.current[index]
 
       const bounds = projectsIndividualUI.current[index].getBoundingClientRect()
@@ -937,11 +926,11 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   // setup camera
   useEffect(() => {
-    camera.position.copy(CameraPositions.home.position)
+    camera.position.copy(CameraPositions.intro.position)
     camera.rotation.set(
-      CameraPositions.home.rotation.x,
-      CameraPositions.home.rotation.y,
-      CameraPositions.home.rotation.z
+      CameraPositions.intro.rotation.x,
+      CameraPositions.intro.rotation.y,
+      CameraPositions.intro.rotation.z
     )
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -955,8 +944,8 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
 
-      <fog args={[0x090929, 15, 25]} attach="fog" />
-      <color attach="background" args={[0x090929]} />
+      <fog args={[0x000000, 15, 25]} attach="fog" />
+      <color attach="background" args={[0x000000]} />
     </>
   )
 }
