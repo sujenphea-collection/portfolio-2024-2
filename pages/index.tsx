@@ -142,7 +142,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
     geometry.setIndex(refGeometry.index)
 
-    const instances = 300
+    const instances = 800
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     const instanceOpacity = new Float32Array(instances * 1)
@@ -150,7 +150,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
       instancePositions[i3 + 0] = randFloat(-5, 2)
       instancePositions[i3 + 1] = 2.5
-      instancePositions[i3 + 2] = randFloat(0, 4)
+      instancePositions[i3 + 2] = randFloat(-4, 4)
 
       instanceRands[i] = randFloat(0, 5)
       instanceOpacity[i] = randFloat(0.4, 1.0)
@@ -171,7 +171,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh renderOrder={10}>
+        <mesh renderOrder={10} frustumCulled={false} userData={{ reflect: false }}>
           <instancedBufferGeometry ref={particlesGeometryRef} />
           <shaderMaterial
             uniforms={particlesUniforms.current}
