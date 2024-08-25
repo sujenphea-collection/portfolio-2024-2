@@ -41,6 +41,8 @@ import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
 import groundFrag from "../src/shaders/ground/groundFrag.glsl"
 import groundVert from "../src/shaders/ground/groundVert.glsl"
+import particlesFrag from "../src/shaders/particles/particlesFrag.glsl"
+import particlesVert from "../src/shaders/particles/particlesVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
@@ -107,6 +109,7 @@ const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 /* -------------------------------------------------------------------------- */
 const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = () => {}
@@ -116,13 +119,42 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     loadItems,
   }))
 
+  /* --------------------------------- effects -------------------------------- */
+  useEffect(() => {
+    if (!props.show) {
+      return
+    }
+
+    const refGeometry = new PlaneGeometry(0.1, 0.1)
+    const geometry = particlesGeometryRef.current ?? new InstancedBufferGeometry()
+
+    Object.keys(refGeometry.attributes).forEach((attr) => {
+      geometry.setAttribute(attr, refGeometry.getAttribute(attr))
+    })
+    geometry.setIndex(refGeometry.index)
+
+    const instances = 32
+    const instancePosition = new Float32Array(instances * 3)
+    for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
+      instancePosition[i3 + 0] = Math.random() * 2 - 1
+      instancePosition[i3 + 1] = Math.random()
+      instancePosition[i3 + 2] = 0
+    }
+
+    geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePosition, 3))
+    geometry.instanceCount = instances
+
+    // set geometry
+    particlesGeometryRef.current = geometry
+  }, [props.show])
+
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
       <group>
         <mesh>
-          <boxGeometry />
-          <meshBasicMaterial color="red" />
+          <instancedBufferGeometry ref={particlesGeometryRef} />
+          <shaderMaterial vertexShader={particlesVert} fragmentShader={particlesFrag} />
         </mesh>
       </group>
     )
