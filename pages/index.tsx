@@ -170,6 +170,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
             uniforms={particlesUniforms.current}
             vertexShader={particlesVert}
             fragmentShader={particlesFrag}
+            transparent
           />
         </mesh>
       </group>
