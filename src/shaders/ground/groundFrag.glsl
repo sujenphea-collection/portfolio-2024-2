@@ -55,7 +55,7 @@ void main() {
   vec3 viewDirection = normalize(v_pos - cameraPosition);
   vec3 lightPos = vec3(0.0, 3.0, 1.0);
   vec3 lightColor = vec3(0.8, 0.8, 1.0);
-  float lightIntensity = 0.15;
+  float lightIntensity = 0.3;
   light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 20.0, 0.0, 0.0);
 
   color += light;
@@ -66,7 +66,7 @@ void main() {
   color += reflection.rgb * uReflect;
 
   // add noise
-  color *= crange(1.0 - (noise * 3.0), 0.0, 1.0, 0.0, 0.8);
+  color *= crange(1.0 - (noise * 4.0), 0.0, 1.0, 0.0, 0.8);
   
   // get shadow alpha
   vec2 shadowUv = (v_uv2 - 0.5) * u_scale + 0.5;
