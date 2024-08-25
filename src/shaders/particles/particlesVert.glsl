@@ -4,6 +4,7 @@ attribute float a_instanceOpacity;
 
 uniform float u_time;
 
+varying vec2 v_uv;
 varying vec3 v_pos;
 varying float v_opacity;
 
@@ -20,6 +21,7 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   // set varyings
+  v_uv = uv;
   v_pos = (modelViewMatrix * vec4(pos, 1.0)).xyz;
   v_opacity = a_instanceOpacity;
 }
