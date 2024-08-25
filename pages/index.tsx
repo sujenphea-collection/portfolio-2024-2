@@ -62,9 +62,13 @@ type ExperienceRef = {
 /*                                  constants                                 */
 /* -------------------------------------------------------------------------- */
 const CameraPositions = {
+  intro: {
+    position: { x: -0.14895584310989712, y: 7.122215642812359, z: 15.57179759908457 },
+    rotation: { x: -0.42897346309670187, y: -0.008698803964670862, z: -0.003978580446027203 },
+  },
   home: {
-    position: { x: -8.395355214815083, y: 3.3579525957858896, z: 5.489054327474239 },
-    rotation: { x: -0.5321868791684208, y: -1.0205317487831038, z: -0.4651942426903008 },
+    position: { x: -0.034203410629448434, y: 1.2267996112598016, z: 3.6977443998667225 },
+    rotation: { x: -0.21248504785893402, y: -0.012491264825962377, z: -0.002694810971032839 },
   },
   projects: {
     position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
@@ -922,11 +926,11 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   // setup camera
   useEffect(() => {
-    camera.position.copy(CameraPositions.home.position)
+    camera.position.copy(CameraPositions.intro.position)
     camera.rotation.set(
-      CameraPositions.home.rotation.x,
-      CameraPositions.home.rotation.y,
-      CameraPositions.home.rotation.z
+      CameraPositions.intro.rotation.x,
+      CameraPositions.intro.rotation.y,
+      CameraPositions.intro.rotation.z
     )
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
