@@ -3,6 +3,7 @@ import gsap from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
   AddEquation,
+  AdditiveBlending,
   BufferGeometry,
   Color,
   CustomBlending,
@@ -145,18 +146,21 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     const instanceOpacity = new Float32Array(instances * 1)
+    const instanceScale = new Float32Array(instances * 1)
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
-      instancePositions[i3 + 0] = randFloat(-10, 2)
+      instancePositions[i3 + 0] = randFloat(-5, 2)
       instancePositions[i3 + 1] = 2.5
-      instancePositions[i3 + 2] = randFloat(0, 10)
+      instancePositions[i3 + 2] = randFloat(0, 4)
 
       instanceRands[i] = randFloat(0, 5)
       instanceOpacity[i] = randFloat(0.4, 1.0)
+      instanceScale[i] = randFloat(0.6, 1.0)
     }
 
     geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePositions, 3))
     geometry.setAttribute("a_instanceRand", new InstancedBufferAttribute(instanceRands, 1))
     geometry.setAttribute("a_instanceOpacity", new InstancedBufferAttribute(instanceOpacity, 1))
+    geometry.setAttribute("a_instanceScale", new InstancedBufferAttribute(instanceOpacity, 1))
     geometry.instanceCount = instances
 
     // set geometry
@@ -167,13 +171,16 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh>
+        <mesh renderOrder={10}>
           <instancedBufferGeometry ref={particlesGeometryRef} />
           <shaderMaterial
             uniforms={particlesUniforms.current}
             vertexShader={particlesVert}
             fragmentShader={particlesFrag}
             transparent
+            depthTest={false}
+            depthWrite={false}
+            blending={AdditiveBlending}
           />
         </mesh>
       </group>
