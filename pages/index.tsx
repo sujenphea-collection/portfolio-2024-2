@@ -105,6 +105,31 @@ const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
+const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = () => {}
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItems,
+  }))
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <mesh>
+          <boxGeometry />
+          <meshBasicMaterial color="red" />
+        </mesh>
+      </group>
+    )
+  )
+})
+Particles.displayName = "Particles"
+
 const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   // scene
@@ -809,6 +834,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
   /* ---------------------------------- refs ---------------------------------- */
   // scene
+  const particlesRef = useRef<ExperienceRef | null>(null)
   const dirtRef = useRef<ExperienceRef | null>(null)
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
@@ -825,6 +851,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
     // resize scenes
+    particlesRef.current?.resize?.(window.innerWidth, window.innerHeight)
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
     groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
@@ -905,6 +932,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   /* --------------------------------- effects -------------------------------- */
   // load materials
   useEffect(() => {
+    particlesRef.current?.loadItems(props.loader)
     dirtRef.current?.loadItems(props.loader)
     groundRef.current?.loadItems(props.loader)
     stageRef.current?.loadItems(props.loader)
@@ -940,6 +968,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   return (
     <>
       {/* scene */}
+      <Particles ref={particlesRef} show={props.show} />
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
