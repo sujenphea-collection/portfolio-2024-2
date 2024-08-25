@@ -35,7 +35,7 @@ import {
   WebGLRenderTarget,
   ZeroFactor,
 } from "three"
-import { clamp } from "three/src/math/MathUtils"
+import { clamp, randFloat } from "three/src/math/MathUtils"
 import { Three } from "../src/experience/Three"
 import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
@@ -145,11 +145,11 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
-      instancePositions[i3 + 0] = Math.random() * 2 - 1
+      instancePositions[i3 + 0] = randFloat(-10, 2)
       instancePositions[i3 + 1] = 2.5
-      instancePositions[i3 + 2] = 0
+      instancePositions[i3 + 2] = randFloat(-5, 5)
 
-      instanceRands[i] = Math.random()
+      instanceRands[i] = randFloat(0, 5)
     }
 
     geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePositions, 3))

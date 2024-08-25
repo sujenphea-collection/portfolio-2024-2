@@ -11,6 +11,7 @@ void main() {
 
   pos.x += progress * 0.8;
   pos.y -= progress;
+  pos.z -= progress;
   
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
