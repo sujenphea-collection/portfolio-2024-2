@@ -110,6 +110,9 @@ const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
+  const particlesUniforms = useRef({
+    u_time: { value: 0 },
+  })
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = () => {}
@@ -118,6 +121,11 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   useImperativeHandle(ref, () => ({
     loadItems,
   }))
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame((_, delta) => {
+    particlesUniforms.current.u_time.value += delta
+  })
 
   /* --------------------------------- effects -------------------------------- */
   useEffect(() => {
@@ -134,14 +142,18 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     geometry.setIndex(refGeometry.index)
 
     const instances = 32
-    const instancePosition = new Float32Array(instances * 3)
+    const instancePositions = new Float32Array(instances * 3)
+    const instanceRands = new Float32Array(instances * 1)
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
-      instancePosition[i3 + 0] = Math.random() * 2 - 1
-      instancePosition[i3 + 1] = Math.random()
-      instancePosition[i3 + 2] = 0
+      instancePositions[i3 + 0] = Math.random() * 2 - 1
+      instancePositions[i3 + 1] = 2.5
+      instancePositions[i3 + 2] = 0
+
+      instanceRands[i] = Math.random()
     }
 
-    geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePosition, 3))
+    geometry.setAttribute("a_instancePosition", new InstancedBufferAttribute(instancePositions, 3))
+    geometry.setAttribute("a_instanceRand", new InstancedBufferAttribute(instanceRands, 1))
     geometry.instanceCount = instances
 
     // set geometry
@@ -154,7 +166,11 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       <group>
         <mesh>
           <instancedBufferGeometry ref={particlesGeometryRef} />
-          <shaderMaterial vertexShader={particlesVert} fragmentShader={particlesFrag} />
+          <shaderMaterial
+            uniforms={particlesUniforms.current}
+            vertexShader={particlesVert}
+            fragmentShader={particlesFrag}
+          />
         </mesh>
       </group>
     )
