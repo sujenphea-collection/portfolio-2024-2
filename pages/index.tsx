@@ -958,6 +958,13 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const brownianMotion = useRef(new BrownianMotion())
   const tempVec3 = useRef(new Vector3())
 
+  const params = useRef({
+    xLogoRandX: randFloat(0.2, 0.8),
+    xLogoRandY: randFloat(0.2, 0.8),
+    githubLogoRandX: randFloat(0.2, 0.8),
+    githubLogoRandY: randFloat(0.2, 0.8),
+  })
+
   // ui
   const contactUI = useRef(document.getElementById(contactSectionId))
 
@@ -989,18 +996,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
   }
 
-  const update = () => {
-    console.log("dbg - Input.mouseXY: ", Input.mouseXY)
-  }
-
-  /* --------------------------------- handle --------------------------------- */
-  useImperativeHandle(ref, () => ({
-    loadItems,
-    update,
-  }))
-
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame((_, delta) => {
+  const update = (delta: number) => {
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
     // lerp
@@ -1070,12 +1066,29 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       // post update
       githubLogoMeshRef.current.scale.copy(tempVec3.current)
     }
-  })
+
+    // mouse interaction
+    if (xLogoMeshRef.current) {
+      xLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.xLogoRandX
+      xLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.xLogoRandY
+    }
+
+    if (githubLogoMeshRef.current) {
+      githubLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.githubLogoRandX
+      githubLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.githubLogoRandY
+    }
+  }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItems,
+    update,
+  }))
 
   /* --------------------------------- effects -------------------------------- */
   // setup brownian motion
   useEffect(() => {
-    brownianMotion.current.positionAmplitude = 0.1
+    brownianMotion.current.positionAmplitude = 0.2
     brownianMotion.current.rotationAmplitude = 0.0
 
     brownianMotion.current.positionFrequency = 0.1
@@ -1086,7 +1099,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[0, 0.35, -4]}>
+        <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} position={[0, 0.35, -4]}>
           <shaderMaterial
             uniforms={xLogoUniformsRef.current}
             vertexShader={logoVert}
@@ -1095,13 +1108,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           />
         </mesh>
 
-        <mesh
-          ref={githubLogoMeshRef}
-          geometry={githubLogoGeometryRef.current}
-          rotation={[Math.PI * 0.5, 0, 0]}
-          scale={[16, 16, 16]}
-          position={[0, 0.35, -4]}
-        >
+        <mesh ref={githubLogoMeshRef} geometry={githubLogoGeometryRef.current} position={[0, 0.35, -4]}>
           <shaderMaterial
             uniforms={githubLogoUniformsRef.current}
             vertexShader={logoVert}
