@@ -42,6 +42,8 @@ import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
 import groundFrag from "../src/shaders/ground/groundFrag.glsl"
 import groundVert from "../src/shaders/ground/groundVert.glsl"
+import logoFrag from "../src/shaders/logo/logoFrag.glsl"
+import logoVert from "../src/shaders/logo/logoVert.glsl"
 import particlesFrag from "../src/shaders/particles/particlesFrag.glsl"
 import particlesVert from "../src/shaders/particles/particlesVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
@@ -1002,7 +1004,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     props.show && (
       <group>
         <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[0, 0.35, -4]}>
-          <meshBasicMaterial />
+          <shaderMaterial vertexShader={logoVert} fragmentShader={logoFrag} />
         </mesh>
 
         <mesh
@@ -1012,7 +1014,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           scale={[16, 16, 16]}
           position={[0, 0.35, -4]}
         >
-          <meshBasicMaterial />
+          <shaderMaterial vertexShader={logoVert} fragmentShader={logoFrag} />
         </mesh>
       </group>
     )
