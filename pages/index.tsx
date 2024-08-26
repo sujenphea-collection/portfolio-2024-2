@@ -110,6 +110,10 @@ const contactSectionId = "contactSectionId"
 // css
 const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 
+// url
+const xURL = "https://x.com"
+const githubURL = "https://github.com"
+
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
@@ -943,8 +947,8 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const githubLogoGeometryRef = useRef<BufferGeometry>()
 
   // scene
-  const xLogoMeshRef = useRef<Mesh | null>(null)
-  const githubLogoMeshRef = useRef<Mesh | null>(null)
+  const xLogoMeshRef = useRef<Group | null>(null)
+  const githubLogoMeshRef = useRef<Group | null>(null)
 
   const xLogoUniformsRef = useRef({
     u_progress: { value: 0 },
@@ -1099,23 +1103,61 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} position={[0, 0.35, -4]}>
-          <shaderMaterial
-            uniforms={xLogoUniformsRef.current}
-            vertexShader={logoVert}
-            fragmentShader={logoFrag}
-            transparent
-          />
-        </mesh>
+        <group ref={xLogoMeshRef} position={[0, 0.35, -4]}>
+          <mesh geometry={xLogoGeometryRef.current}>
+            <shaderMaterial
+              uniforms={xLogoUniformsRef.current}
+              vertexShader={logoVert}
+              fragmentShader={logoFrag}
+              transparent
+            />
+          </mesh>
 
-        <mesh ref={githubLogoMeshRef} geometry={githubLogoGeometryRef.current} position={[0, 0.35, -4]}>
-          <shaderMaterial
-            uniforms={githubLogoUniformsRef.current}
-            vertexShader={logoVert}
-            fragmentShader={logoFrag}
-            transparent
-          />
-        </mesh>
+          {/* pointer mesh */}
+          <mesh
+            scale={[0.4, 0.4, 1]}
+            visible={false}
+            onPointerEnter={() => {
+              document.body.style.cursor = "pointer"
+            }}
+            onClick={() => {
+              window.open(xURL, "_blank")
+            }}
+            onPointerLeave={() => {
+              document.body.style.cursor = "auto"
+            }}
+          >
+            <planeGeometry />
+          </mesh>
+        </group>
+
+        <group ref={githubLogoMeshRef} position={[0, 0.35, -4]}>
+          <mesh geometry={githubLogoGeometryRef.current}>
+            <shaderMaterial
+              uniforms={githubLogoUniformsRef.current}
+              vertexShader={logoVert}
+              fragmentShader={logoFrag}
+              transparent
+            />
+          </mesh>
+
+          {/* pointer mesh */}
+          <mesh
+            scale={[0.45, 0.45, 1]}
+            visible={false}
+            onPointerEnter={() => {
+              document.body.style.cursor = "pointer"
+            }}
+            onClick={() => {
+              window.open(githubURL, "_blank")
+            }}
+            onPointerLeave={() => {
+              document.body.style.cursor = "auto"
+            }}
+          >
+            <planeGeometry />
+          </mesh>
+        </group>
       </group>
     )
   )
