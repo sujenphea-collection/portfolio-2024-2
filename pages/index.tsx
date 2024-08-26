@@ -628,7 +628,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
-  const screenGeometryRef = useRef<BufferGeometry | null>(null)
+  const screenLeftGeometryRef = useRef<BufferGeometry | null>(null)
+  const screenRightGeometryRef = useRef<BufferGeometry | null>(null)
 
   const floorUniforms = useRef({
     u_scale: { value: 0.1 },
@@ -702,13 +703,25 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       },
     })
 
-    loader.add("/models/screen.obj", ItemType.Obj, {
+    loader.add("/models/screenLeft.obj", ItemType.Obj, {
       onLoad: (obj) => {
         const group = obj as Group
         group.traverse((item) => {
           if (item.type === "Mesh") {
             const mesh = item as Mesh
-            screenGeometryRef.current = mesh.geometry as BufferGeometry
+            screenLeftGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/screenRight.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            screenRightGeometryRef.current = mesh.geometry as BufferGeometry
           }
         })
       },
@@ -861,8 +874,29 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         </mesh>
 
         {/* screen */}
+        <mesh geometry={screenLeftGeometryRef.current ?? undefined}>
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
+        </mesh>
+
+        <mesh geometry={screenRightGeometryRef.current ?? undefined}>
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
+        </mesh>
+
+        {/* pointer mesh */}
         <mesh
-          geometry={screenGeometryRef.current ?? undefined}
+          position={[0, 1, -3.2]}
+          scale={[3.7, 2.12, 1]}
+          visible={false}
           onPointerMove={(ev) => {
             mouse.current.x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
             mouse.current.y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
@@ -874,12 +908,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
             mouse.current.prevY = mouse.current.y
           }}
         >
-          <shaderMaterial
-            uniforms={screenUniforms.current}
-            vertexShader={screenVert}
-            fragmentShader={screenFrag}
-            transparent
-          />
+          <planeGeometry />
         </mesh>
       </group>
     )
