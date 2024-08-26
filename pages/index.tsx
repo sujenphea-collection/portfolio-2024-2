@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
-import gsap from "gsap"
+import gsap, { Quad } from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
   AddEquation,
@@ -37,17 +37,21 @@ import {
   ZeroFactor,
 } from "three"
 import { clamp, randFloat } from "three/src/math/MathUtils"
+import { BrownianMotion } from "../src/experience/BrownianMotion"
 import { Three } from "../src/experience/Three"
 import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
 import groundFrag from "../src/shaders/ground/groundFrag.glsl"
 import groundVert from "../src/shaders/ground/groundVert.glsl"
+import logoFrag from "../src/shaders/logo/logoFrag.glsl"
+import logoVert from "../src/shaders/logo/logoVert.glsl"
 import particlesFrag from "../src/shaders/particles/particlesFrag.glsl"
 import particlesVert from "../src/shaders/particles/particlesVert.glsl"
 import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
 import stageVert from "../src/shaders/stage/stageVert.glsl"
+import { Input } from "../src/utils/input"
 import { ItemType, Loader } from "../src/utils/loader"
 import { MathUtils } from "../src/utils/math"
 import { Properties } from "../src/utils/properties"
@@ -59,6 +63,7 @@ import { cn } from "../src/utils/utils"
 type ExperienceRef = {
   loadItems: (loader: Loader) => void
   resize?: (width: number, height: number) => void
+  update?: (delta: number) => void
 }
 
 /* -------------------------------------------------------------------------- */
@@ -104,6 +109,10 @@ const contactSectionId = "contactSectionId"
 
 // css
 const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
+
+// url
+const xURL = "https://x.com"
+const githubURL = "https://github.com"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -628,7 +637,11 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
-  const screenGeometryRef = useRef<BufferGeometry | null>(null)
+  const screenLeftGeometryRef = useRef<BufferGeometry | null>(null)
+  const screenRightGeometryRef = useRef<BufferGeometry | null>(null)
+
+  const screenLeftMeshRef = useRef<Mesh | null>(null)
+  const screenRightMeshRef = useRef<Mesh | null>(null)
 
   const floorUniforms = useRef({
     u_scale: { value: 0.1 },
@@ -663,6 +676,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const homeUI = useRef(document.getElementById(homeSectionId))
   const projectsUI = useRef(document.getElementById(projectsSectionId))
   const projectsIndividualUI = useRef<HTMLElement[]>([])
+  const contactUI = useRef(document.getElementById(contactSectionId))
 
   // params
   const mouse = useRef({
@@ -702,13 +716,25 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
       },
     })
 
-    loader.add("/models/screen.obj", ItemType.Obj, {
+    loader.add("/models/screenLeft.obj", ItemType.Obj, {
       onLoad: (obj) => {
         const group = obj as Group
         group.traverse((item) => {
           if (item.type === "Mesh") {
             const mesh = item as Mesh
-            screenGeometryRef.current = mesh.geometry as BufferGeometry
+            screenLeftGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/screenRight.obj", ItemType.Obj, {
+      onLoad: (obj) => {
+        const group = obj as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            screenRightGeometryRef.current = mesh.geometry as BufferGeometry
           }
         })
       },
@@ -782,6 +808,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     const homeBounds = homeUI.current?.getBoundingClientRect()
+    const contactBounds = contactUI.current?.getBoundingClientRect()
 
     // home
     const homeTop = homeBounds?.top ?? 0
@@ -813,6 +840,16 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     }
 
     screenUniforms.current.u_mixRatio.value = ratio
+
+    // contact - move screen
+    const contactTop = contactBounds?.top ?? 0
+    const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+    const contactSplitRatio = MathUtils.fit(contactShowScreenOffset, 1, 1.5, 0, 1, Quad.easeInOut)
+
+    const splitOffset = MathUtils.mix(contactSplitRatio, 0, 0.5)
+
+    screenLeftMeshRef.current?.position.setX(-splitOffset)
+    screenRightMeshRef.current?.position.setX(splitOffset)
 
     // mouse
     const velocity = { x: mouse.current.velocityX * 10, y: mouse.current.velocityY * 10 }
@@ -861,8 +898,29 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         </mesh>
 
         {/* screen */}
+        <mesh ref={screenLeftMeshRef} geometry={screenLeftGeometryRef.current ?? undefined}>
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
+        </mesh>
+
+        <mesh ref={screenRightMeshRef} geometry={screenRightGeometryRef.current ?? undefined}>
+          <shaderMaterial
+            uniforms={screenUniforms.current}
+            vertexShader={screenVert}
+            fragmentShader={screenFrag}
+            transparent
+          />
+        </mesh>
+
+        {/* pointer mesh */}
         <mesh
-          geometry={screenGeometryRef.current ?? undefined}
+          position={[0, 1, -3.2]}
+          scale={[3.7, 2.12, 1]}
+          visible={false}
           onPointerMove={(ev) => {
             mouse.current.x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
             mouse.current.y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
@@ -874,18 +932,237 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
             mouse.current.prevY = mouse.current.y
           }}
         >
-          <shaderMaterial
-            uniforms={screenUniforms.current}
-            vertexShader={screenVert}
-            fragmentShader={screenFrag}
-            transparent
-          />
+          <planeGeometry />
         </mesh>
       </group>
     )
   )
 })
 Stage.displayName = "Stage"
+
+const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  // load
+  const xLogoGeometryRef = useRef<BufferGeometry>()
+  const githubLogoGeometryRef = useRef<BufferGeometry>()
+
+  // scene
+  const xLogoMeshRef = useRef<Group | null>(null)
+  const githubLogoMeshRef = useRef<Group | null>(null)
+
+  const xLogoUniformsRef = useRef({
+    u_progress: { value: 0 },
+  })
+
+  const githubLogoUniformsRef = useRef({
+    u_progress: { value: 0 },
+  })
+
+  // brownian
+  const brownianMotion = useRef(new BrownianMotion())
+  const tempVec3 = useRef(new Vector3())
+
+  const params = useRef({
+    xLogoRandX: randFloat(0.2, 0.8),
+    xLogoRandY: randFloat(0.2, 0.8),
+    githubLogoRandX: randFloat(0.2, 0.8),
+    githubLogoRandY: randFloat(0.2, 0.8),
+  })
+
+  // ui
+  const contactUI = useRef(document.getElementById(contactSectionId))
+
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = (loader: Loader) => {
+    loader.add("/models/xlogo.glb", ItemType.Glb, {
+      onLoad: (model) => {
+        const group = model.scene as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            xLogoGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/github.glb", ItemType.Glb, {
+      onLoad: (model) => {
+        const group = model.scene as Group
+
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            githubLogoGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+  }
+
+  const update = (delta: number) => {
+    const contactBounds = contactUI.current?.getBoundingClientRect()
+
+    // lerp
+    const contactTop = contactBounds?.top ?? 0
+    const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    // - x
+    let xRatio = MathUtils.fit(contactShowScreenOffset, 1.8, 2.1, 0, 1, Quad.easeInOut)
+    let zRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 1.8, 0, 1, Quad.easeInOut)
+    xLogoMeshRef.current?.position.setX(MathUtils.mix(0, -0.5, xRatio))
+    xLogoMeshRef.current?.position.setY(0.35)
+    xLogoMeshRef.current?.position.setZ(MathUtils.mix(-4, -2.3, zRatio))
+    xLogoUniformsRef.current.u_progress.value = MathUtils.fit(contactShowScreenOffset, 1.5, 2.1, 0, 1, Quad.easeInOut)
+
+    // - github
+    xRatio = MathUtils.fit(contactShowScreenOffset, 2.0, 2.3, 0, 1, Quad.easeInOut)
+    zRatio = MathUtils.fit(contactShowScreenOffset, 1.7, 2.0, 0, 1, Quad.easeInOut)
+
+    githubLogoMeshRef.current?.position.setX(MathUtils.mix(0, 0.5, xRatio))
+    githubLogoMeshRef.current?.position.setY(0.35)
+    githubLogoMeshRef.current?.position.setZ(MathUtils.mix(-5, -2.3, zRatio))
+    githubLogoUniformsRef.current.u_progress.value = MathUtils.fit(
+      contactShowScreenOffset,
+      1.7,
+      2.3,
+      0,
+      1,
+      Quad.easeInOut
+    )
+
+    // float
+    brownianMotion.current.update(delta)
+    if (xLogoMeshRef.current) {
+      // pre update
+      tempVec3.current.copy(xLogoMeshRef.current.scale)
+      xLogoMeshRef.current.scale.set(1, 1, 1)
+
+      // update
+      xLogoMeshRef.current.updateMatrix()
+      xLogoMeshRef.current.matrix.multiply(brownianMotion.current.matrix)
+      xLogoMeshRef.current.matrix.decompose(
+        xLogoMeshRef.current.position,
+        xLogoMeshRef.current.quaternion,
+        xLogoMeshRef.current.scale
+      )
+      xLogoMeshRef.current.updateMatrixWorld()
+
+      // post update
+      xLogoMeshRef.current.scale.copy(tempVec3.current)
+    }
+
+    if (githubLogoMeshRef.current) {
+      // pre update
+      tempVec3.current.copy(githubLogoMeshRef.current.scale)
+      githubLogoMeshRef.current.scale.set(1, 1, 1)
+
+      // update
+      githubLogoMeshRef.current.updateMatrix()
+      githubLogoMeshRef.current.matrix.multiply(brownianMotion.current.matrix)
+      githubLogoMeshRef.current.matrix.decompose(
+        githubLogoMeshRef.current.position,
+        githubLogoMeshRef.current.quaternion,
+        githubLogoMeshRef.current.scale
+      )
+      githubLogoMeshRef.current.updateMatrixWorld()
+
+      // post update
+      githubLogoMeshRef.current.scale.copy(tempVec3.current)
+    }
+
+    // mouse interaction
+    if (xLogoMeshRef.current) {
+      xLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.xLogoRandX
+      xLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.xLogoRandY
+    }
+
+    if (githubLogoMeshRef.current) {
+      githubLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.githubLogoRandX
+      githubLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.githubLogoRandY
+    }
+  }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItems,
+    update,
+  }))
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup brownian motion
+  useEffect(() => {
+    brownianMotion.current.positionAmplitude = 0.2
+    brownianMotion.current.rotationAmplitude = 0.0
+
+    brownianMotion.current.positionFrequency = 0.1
+    brownianMotion.current.rotationFrequency = 0.1
+  }, [])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <group ref={xLogoMeshRef} position={[0, 0.35, -4]}>
+          <mesh geometry={xLogoGeometryRef.current}>
+            <shaderMaterial
+              uniforms={xLogoUniformsRef.current}
+              vertexShader={logoVert}
+              fragmentShader={logoFrag}
+              transparent
+            />
+          </mesh>
+
+          {/* pointer mesh */}
+          <mesh
+            scale={[0.4, 0.4, 1]}
+            visible={false}
+            onPointerEnter={() => {
+              document.body.style.cursor = "pointer"
+            }}
+            onClick={() => {
+              window.open(xURL, "_blank")
+            }}
+            onPointerLeave={() => {
+              document.body.style.cursor = "auto"
+            }}
+          >
+            <planeGeometry />
+          </mesh>
+        </group>
+
+        <group ref={githubLogoMeshRef} position={[0, 0.35, -4]}>
+          <mesh geometry={githubLogoGeometryRef.current}>
+            <shaderMaterial
+              uniforms={githubLogoUniformsRef.current}
+              vertexShader={logoVert}
+              fragmentShader={logoFrag}
+              transparent
+            />
+          </mesh>
+
+          {/* pointer mesh */}
+          <mesh
+            scale={[0.45, 0.45, 1]}
+            visible={false}
+            onPointerEnter={() => {
+              document.body.style.cursor = "pointer"
+            }}
+            onClick={() => {
+              window.open(githubURL, "_blank")
+            }}
+            onPointerLeave={() => {
+              document.body.style.cursor = "auto"
+            }}
+          >
+            <planeGeometry />
+          </mesh>
+        </group>
+      </group>
+    )
+  )
+})
+Contact.displayName = "Contact"
 
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
@@ -897,6 +1174,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   const dirtRef = useRef<ExperienceRef | null>(null)
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
+  const contactRef = useRef<ExperienceRef | null>(null)
 
   // params
   const tempEuler = useRef(new Euler())
@@ -914,10 +1192,10 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
     groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
+    contactRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
+  const updateCamera = () => {
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const projectsBounds = projectsUI.current?.getBoundingClientRect()
     const aboutBounds = aboutUI.current?.getBoundingClientRect()
@@ -986,6 +1264,21 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
     tempEuler.current.set(cameraRot.x, cameraRot.y, cameraRot.z)
     camera.quaternion.setFromEuler(tempEuler.current)
+  }
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame((_, delta) => {
+    updateCamera()
+
+    // update scene
+    particlesRef.current?.update?.(delta)
+    dirtRef.current?.update?.(delta)
+    groundRef.current?.update?.(delta)
+    stageRef.current?.update?.(delta)
+    contactRef.current?.update?.(delta)
+
+    // post update
+    Input.postUpdate()
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -995,6 +1288,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     dirtRef.current?.loadItems(props.loader)
     groundRef.current?.loadItems(props.loader)
     stageRef.current?.loadItems(props.loader)
+    contactRef.current?.loadItems(props.loader)
 
     props.preinitComplete()
 
@@ -1031,6 +1325,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
+      <Contact ref={contactRef} show={props.show} />
 
       <fog args={[0x000000, 15, 25]} attach="fog" />
       <color attach="background" args={[0x000000]} />
@@ -1308,7 +1603,7 @@ export default function Home() {
         </div>
 
         {/* contact */}
-        <div id={contactSectionId} className="pb-[150vh]">
+        <div id={contactSectionId} className="pb-[250vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div
               className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
