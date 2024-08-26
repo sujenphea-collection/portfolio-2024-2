@@ -126,7 +126,10 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     Properties.deltaTime = delta
+    Properties.globalUniforms.u_deltaTime.value = delta
+
     Properties.time += delta
+    Properties.globalUniforms.u_time.value += delta
   })
 
   /* --------------------------------- effects -------------------------------- */
