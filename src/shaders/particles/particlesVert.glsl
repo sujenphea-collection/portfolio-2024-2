@@ -15,7 +15,7 @@ void main() {
   float progressTime = 100. + u_time * 0.2;
   float progress = mod(progressTime + a_instanceRand, 5.0);
 
-  pos.x += progress * 0.8;
+  pos.x += progress * 0.8 * (1.0 - a_instanceScale + 0.3);
   pos.y -= progress;
   pos.z -= progress * 0.2;
   

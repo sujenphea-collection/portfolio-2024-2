@@ -151,15 +151,15 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
     geometry.setIndex(refGeometry.index)
 
-    const instances = 800
+    const instances = 1200
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     const instanceOpacity = new Float32Array(instances * 1)
     const instanceScale = new Float32Array(instances * 1)
     for (let i = 0, i3 = 0; i < instances; i += 1, i3 += 3) {
-      instancePositions[i3 + 0] = randFloat(-5, 2)
+      instancePositions[i3 + 0] = randFloat(-4, 2)
       instancePositions[i3 + 1] = 2.5
-      instancePositions[i3 + 2] = randFloat(-4, 4)
+      instancePositions[i3 + 2] = randFloat(-4, 10)
 
       instanceRands[i] = randFloat(0, 5)
       instanceOpacity[i] = randFloat(0.4, 1.0)
