@@ -37,6 +37,7 @@ import {
   ZeroFactor,
 } from "three"
 import { clamp, randFloat } from "three/src/math/MathUtils"
+import { BrownianMotion } from "../src/experience/BrownianMotion"
 import { Three } from "../src/experience/Three"
 import dirtFrag from "../src/shaders/dirt/dirtFrag.glsl"
 import dirtVert from "../src/shaders/dirt/dirtVert.glsl"
@@ -943,6 +944,10 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const xLogoMeshRef = useRef<Mesh | null>(null)
   const githubLogoMeshRef = useRef<Mesh | null>(null)
 
+  // brownian
+  const brownianMotion = useRef(new BrownianMotion())
+  const tempVec3 = useRef(new Vector3())
+
   // ui
   const contactUI = useRef(document.getElementById(contactSectionId))
 
@@ -980,9 +985,10 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
+  useFrame((_, delta) => {
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
+    // lerp
     const contactTop = contactBounds?.top ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
 
@@ -994,10 +1000,61 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     xRatio = MathUtils.fit(contactShowScreenOffset, 2.0, 2.3, 0, 1, Quad.easeInOut)
     zRatio = MathUtils.fit(contactShowScreenOffset, 1.7, 2.0, 0, 1, Quad.easeInOut)
+
     githubLogoMeshRef.current?.position.setX(MathUtils.mix(0, 0.5, xRatio))
     githubLogoMeshRef.current?.position.setY(0.35)
     githubLogoMeshRef.current?.position.setZ(MathUtils.mix(-5, -2.3, zRatio))
+
+    // float
+    brownianMotion.current.update(delta)
+    if (xLogoMeshRef.current) {
+      // pre update
+      tempVec3.current.copy(xLogoMeshRef.current.scale)
+      xLogoMeshRef.current.scale.set(1, 1, 1)
+
+      // update
+      xLogoMeshRef.current.updateMatrix()
+      xLogoMeshRef.current.matrix.multiply(brownianMotion.current.matrix)
+      xLogoMeshRef.current.matrix.decompose(
+        xLogoMeshRef.current.position,
+        xLogoMeshRef.current.quaternion,
+        xLogoMeshRef.current.scale
+      )
+      xLogoMeshRef.current.updateMatrixWorld()
+
+      // post update
+      xLogoMeshRef.current.scale.copy(tempVec3.current)
+    }
+
+    if (githubLogoMeshRef.current) {
+      // pre update
+      tempVec3.current.copy(githubLogoMeshRef.current.scale)
+      githubLogoMeshRef.current.scale.set(1, 1, 1)
+
+      // update
+      githubLogoMeshRef.current.updateMatrix()
+      githubLogoMeshRef.current.matrix.multiply(brownianMotion.current.matrix)
+      githubLogoMeshRef.current.matrix.decompose(
+        githubLogoMeshRef.current.position,
+        githubLogoMeshRef.current.quaternion,
+        githubLogoMeshRef.current.scale
+      )
+      githubLogoMeshRef.current.updateMatrixWorld()
+
+      // post update
+      githubLogoMeshRef.current.scale.copy(tempVec3.current)
+    }
   })
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup brownian motion
+  useEffect(() => {
+    brownianMotion.current.positionAmplitude = 0.1
+    brownianMotion.current.rotationAmplitude = 0.0
+
+    brownianMotion.current.positionFrequency = 0.1
+    brownianMotion.current.rotationFrequency = 0.1
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
