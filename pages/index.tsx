@@ -934,6 +934,7 @@ Stage.displayName = "Stage"
 const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const xLogoGeometryRef = useRef<BufferGeometry>()
+  const githubLogoGeometryRef = useRef<BufferGeometry>()
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -944,6 +945,19 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           if (item.type === "Mesh") {
             const mesh = item as Mesh
             xLogoGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+
+    loader.add("/models/github.glb", ItemType.Glb, {
+      onLoad: (model) => {
+        const group = model.scene as Group
+
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            githubLogoGeometryRef.current = mesh.geometry as BufferGeometry
           }
         })
       },
@@ -959,7 +973,16 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   return (
     props.show && (
       <group>
-        <mesh geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[-1, 0.5, -2.3]}>
+        <mesh geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[-0.5, 0.35, -2.3]}>
+          <meshBasicMaterial />
+        </mesh>
+
+        <mesh
+          geometry={githubLogoGeometryRef.current}
+          rotation={[Math.PI * 0.5, 0, 0]}
+          scale={[16, 16, 16]}
+          position={[0.5, 0.35, -2.3]}
+        >
           <meshBasicMaterial />
         </mesh>
       </group>
