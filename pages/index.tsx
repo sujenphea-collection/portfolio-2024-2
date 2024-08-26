@@ -51,6 +51,7 @@ import screenFrag from "../src/shaders/screen/screenFrag.glsl"
 import screenVert from "../src/shaders/screen/screenVert.glsl"
 import stageFrag from "../src/shaders/stage/stageFrag.glsl"
 import stageVert from "../src/shaders/stage/stageVert.glsl"
+import { Input } from "../src/utils/input"
 import { ItemType, Loader } from "../src/utils/loader"
 import { MathUtils } from "../src/utils/math"
 import { Properties } from "../src/utils/properties"
@@ -62,6 +63,7 @@ import { cn } from "../src/utils/utils"
 type ExperienceRef = {
   loadItems: (loader: Loader) => void
   resize?: (width: number, height: number) => void
+  update?: (delta: number) => void
 }
 
 /* -------------------------------------------------------------------------- */
@@ -987,9 +989,14 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     })
   }
 
+  const update = () => {
+    console.log("dbg - Input.mouseXY: ", Input.mouseXY)
+  }
+
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    update,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -1139,8 +1146,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     contactRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
-  /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
+  const updateCamera = () => {
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const projectsBounds = projectsUI.current?.getBoundingClientRect()
     const aboutBounds = aboutUI.current?.getBoundingClientRect()
@@ -1209,6 +1215,21 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
 
     tempEuler.current.set(cameraRot.x, cameraRot.y, cameraRot.z)
     camera.quaternion.setFromEuler(tempEuler.current)
+  }
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame((_, delta) => {
+    updateCamera()
+
+    // update scene
+    particlesRef.current?.update?.(delta)
+    dirtRef.current?.update?.(delta)
+    groundRef.current?.update?.(delta)
+    stageRef.current?.update?.(delta)
+    contactRef.current?.update?.(delta)
+
+    // post update
+    Input.postUpdate()
   })
 
   /* --------------------------------- effects -------------------------------- */

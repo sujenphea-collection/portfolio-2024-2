@@ -9,6 +9,7 @@ import lights from "../src/shaders/utils/lights.glsl"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
+import { Input } from "../src/utils/input"
 import "../styles/global.css"
 
 /* -------------------------------------------------------------------------- */
@@ -52,6 +53,7 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   // setup
   useEffect(() => {
     Properties.gl = gl
+    Input.preInit()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shaderChunk = ShaderChunk as any
