@@ -14,7 +14,7 @@ void main() {
 
   // get alpha
   float alphaRatio = min(u_progress * 10.0, 1.0);
-  alpha = mix(0.5, 1.0, alphaRatio);
+  alpha = mix(0.0, 1.0, alphaRatio);
 
   // get color
   float colorRatio = min(u_progress * 10.0, 1.0);
