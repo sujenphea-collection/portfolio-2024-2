@@ -944,6 +944,14 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const xLogoMeshRef = useRef<Mesh | null>(null)
   const githubLogoMeshRef = useRef<Mesh | null>(null)
 
+  const xLogoUniformsRef = useRef({
+    u_progress: { value: 0 },
+  })
+
+  const githubLogoUniformsRef = useRef({
+    u_progress: { value: 0 },
+  })
+
   // brownian
   const brownianMotion = useRef(new BrownianMotion())
   const tempVec3 = useRef(new Vector3())
@@ -992,18 +1000,29 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const contactTop = contactBounds?.top ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
 
+    // - x
     let xRatio = MathUtils.fit(contactShowScreenOffset, 1.8, 2.1, 0, 1, Quad.easeInOut)
     let zRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 1.8, 0, 1, Quad.easeInOut)
     xLogoMeshRef.current?.position.setX(MathUtils.mix(0, -0.5, xRatio))
     xLogoMeshRef.current?.position.setY(0.35)
     xLogoMeshRef.current?.position.setZ(MathUtils.mix(-4, -2.3, zRatio))
+    xLogoUniformsRef.current.u_progress.value = MathUtils.fit(contactShowScreenOffset, 1.5, 2.1, 0, 1, Quad.easeInOut)
 
+    // - github
     xRatio = MathUtils.fit(contactShowScreenOffset, 2.0, 2.3, 0, 1, Quad.easeInOut)
     zRatio = MathUtils.fit(contactShowScreenOffset, 1.7, 2.0, 0, 1, Quad.easeInOut)
 
     githubLogoMeshRef.current?.position.setX(MathUtils.mix(0, 0.5, xRatio))
     githubLogoMeshRef.current?.position.setY(0.35)
     githubLogoMeshRef.current?.position.setZ(MathUtils.mix(-5, -2.3, zRatio))
+    githubLogoUniformsRef.current.u_progress.value = MathUtils.fit(
+      contactShowScreenOffset,
+      1.7,
+      2.3,
+      0,
+      1,
+      Quad.easeInOut
+    )
 
     // float
     brownianMotion.current.update(delta)
@@ -1061,7 +1080,12 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     props.show && (
       <group>
         <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[0, 0.35, -4]}>
-          <shaderMaterial vertexShader={logoVert} fragmentShader={logoFrag} />
+          <shaderMaterial
+            uniforms={xLogoUniformsRef.current}
+            vertexShader={logoVert}
+            fragmentShader={logoFrag}
+            transparent
+          />
         </mesh>
 
         <mesh
@@ -1071,7 +1095,12 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           scale={[16, 16, 16]}
           position={[0, 0.35, -4]}
         >
-          <shaderMaterial vertexShader={logoVert} fragmentShader={logoFrag} />
+          <shaderMaterial
+            uniforms={githubLogoUniformsRef.current}
+            vertexShader={logoVert}
+            fragmentShader={logoFrag}
+            transparent
+          />
         </mesh>
       </group>
     )

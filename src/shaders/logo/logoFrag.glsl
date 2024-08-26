@@ -1,3 +1,5 @@
+uniform float u_progress;
+
 varying vec3 v_pos;
 varying vec3 v_normal;
 
@@ -8,8 +10,15 @@ varying vec3 v_normal;
 /* -------------------------------------------------------------------------- */
 void main() {
   vec3 color = vec3(0.5);
+  float alpha = 0.0;
 
-  float top = v_pos.y + 0.4;
+  // get alpha
+  float alphaRatio = min(u_progress * 10.0, 1.0);
+  alpha = mix(0.5, 1.0, alphaRatio);
+
+  // get color
+  float colorRatio = min(u_progress * 10.0, 1.0);
+  color = mix(vec3(0.0), vec3(0.5), colorRatio);
 
   // add light
   vec3 light = vec3(0.0);
@@ -20,8 +29,9 @@ void main() {
   float lightIntensity = 3.0;
   light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 20.0, 0.0, 0.0);
   
-  color += light;
+  float lightRatio = min(max(0.0, (u_progress - 0.8) * 10.0), 1.0);
+  color += mix(vec3(0.0), light, lightRatio);
 
   // set color
-  gl_FragColor = vec4(color, 1.0);
+  gl_FragColor = vec4(color, alpha);
 }
