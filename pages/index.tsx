@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber"
-import gsap from "gsap"
+import gsap, { Quad } from "gsap"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import {
   AddEquation,
@@ -631,6 +631,9 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const screenLeftGeometryRef = useRef<BufferGeometry | null>(null)
   const screenRightGeometryRef = useRef<BufferGeometry | null>(null)
 
+  const screenLeftMeshRef = useRef<Mesh | null>(null)
+  const screenRightMeshRef = useRef<Mesh | null>(null)
+
   const floorUniforms = useRef({
     u_scale: { value: 0.1 },
     u_time: { value: 0 },
@@ -664,6 +667,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   const homeUI = useRef(document.getElementById(homeSectionId))
   const projectsUI = useRef(document.getElementById(projectsSectionId))
   const projectsIndividualUI = useRef<HTMLElement[]>([])
+  const contactUI = useRef(document.getElementById(contactSectionId))
 
   // params
   const mouse = useRef({
@@ -795,6 +799,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     const homeBounds = homeUI.current?.getBoundingClientRect()
+    const contactBounds = contactUI.current?.getBoundingClientRect()
 
     // home
     const homeTop = homeBounds?.top ?? 0
@@ -826,6 +831,16 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     }
 
     screenUniforms.current.u_mixRatio.value = ratio
+
+    // contact - move screen
+    const contactTop = contactBounds?.top ?? 0
+    const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+    const contactSplitRatio = MathUtils.fit(contactShowScreenOffset, 1, 1.5, 0, 1, Quad.easeInOut)
+
+    const splitOffset = MathUtils.mix(contactSplitRatio, 0, 0.5)
+
+    screenLeftMeshRef.current?.position.setX(-splitOffset)
+    screenRightMeshRef.current?.position.setX(splitOffset)
 
     // mouse
     const velocity = { x: mouse.current.velocityX * 10, y: mouse.current.velocityY * 10 }
@@ -874,7 +889,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         </mesh>
 
         {/* screen */}
-        <mesh geometry={screenLeftGeometryRef.current ?? undefined}>
+        <mesh ref={screenLeftMeshRef} geometry={screenLeftGeometryRef.current ?? undefined}>
           <shaderMaterial
             uniforms={screenUniforms.current}
             vertexShader={screenVert}
@@ -883,7 +898,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           />
         </mesh>
 
-        <mesh geometry={screenRightGeometryRef.current ?? undefined}>
+        <mesh ref={screenRightMeshRef} geometry={screenRightGeometryRef.current ?? undefined}>
           <shaderMaterial
             uniforms={screenUniforms.current}
             vertexShader={screenVert}
