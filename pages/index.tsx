@@ -931,6 +931,43 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Stage.displayName = "Stage"
 
+const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const xLogoGeometryRef = useRef<BufferGeometry>()
+
+  /* -------------------------------- functions ------------------------------- */
+  const loadItems = (loader: Loader) => {
+    loader.add("/models/xlogo.glb", ItemType.Glb, {
+      onLoad: (model) => {
+        const group = model.scene as Group
+        group.traverse((item) => {
+          if (item.type === "Mesh") {
+            const mesh = item as Mesh
+            xLogoGeometryRef.current = mesh.geometry as BufferGeometry
+          }
+        })
+      },
+    })
+  }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    loadItems,
+  }))
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    props.show && (
+      <group>
+        <mesh geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[-1, 0.5, -2.3]}>
+          <meshBasicMaterial />
+        </mesh>
+      </group>
+    )
+  )
+})
+Contact.displayName = "Contact"
+
 // eslint-disable-next-line react/no-unused-prop-types
 const Experience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   const { camera } = useThree()
@@ -941,6 +978,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
   const dirtRef = useRef<ExperienceRef | null>(null)
   const groundRef = useRef<ExperienceRef | null>(null)
   const stageRef = useRef<ExperienceRef | null>(null)
+  const contactRef = useRef<ExperienceRef | null>(null)
 
   // params
   const tempEuler = useRef(new Euler())
@@ -958,6 +996,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
     groundRef.current?.resize?.(window.innerWidth, window.innerHeight)
     stageRef.current?.resize?.(window.innerWidth, window.innerHeight)
+    contactRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -1039,6 +1078,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
     dirtRef.current?.loadItems(props.loader)
     groundRef.current?.loadItems(props.loader)
     stageRef.current?.loadItems(props.loader)
+    contactRef.current?.loadItems(props.loader)
 
     props.preinitComplete()
 
@@ -1075,6 +1115,7 @@ const Experience = (props: { loader: Loader; preinitComplete: () => void; show: 
       <Dirt ref={dirtRef} show={props.show} />
       <Ground ref={groundRef} show={props.show} />
       <Stage ref={stageRef} show={props.show} />
+      <Contact ref={contactRef} show={props.show} />
 
       <fog args={[0x000000, 15, 25]} attach="fog" />
       <color attach="background" args={[0x000000]} />
