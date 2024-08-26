@@ -2,14 +2,16 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { AppProps } from "next/app"
 import Head from "next/head"
-import { ReactNode, useCallback, useEffect, useState } from "react"
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { PerspectiveCamera, ShaderChunk } from "three"
+import { FboHelper } from "../src/experience/FBOHelper"
+import { Postprocessing } from "../src/experience/Postprocessing"
 import { r3f } from "../src/experience/Three"
 import lights from "../src/shaders/utils/lights.glsl"
+import { Input } from "../src/utils/input"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
-import { Input } from "../src/utils/input"
 import "../styles/global.css"
 
 /* -------------------------------------------------------------------------- */
@@ -31,6 +33,8 @@ import "../styles/global.css"
 const Setup = (props: { onEngineSetup: () => void }) => {
   const { camera, gl } = useThree()
 
+  const postprocessing = useRef(new Postprocessing())
+
   /* -------------------------------- callbacks ------------------------------- */
   const resize = useCallback(() => {
     const _camera = camera as PerspectiveCamera
@@ -49,11 +53,17 @@ const Setup = (props: { onEngineSetup: () => void }) => {
     Properties.time += delta
   })
 
+  // render
+  useFrame(({ scene }) => {
+    postprocessing.current.render(scene, camera)
+  }, 1)
+
   /* --------------------------------- effects -------------------------------- */
   // setup
   useEffect(() => {
     Properties.gl = gl
     Input.preInit()
+    FboHelper.init(gl)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shaderChunk = ShaderChunk as any
