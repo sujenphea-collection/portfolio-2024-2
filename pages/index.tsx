@@ -843,10 +843,13 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
     // contact - move screen
     const contactTop = contactBounds?.top ?? 0
+    const contactBottom = contactBounds?.bottom ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+    const contactHideScreenOffset = -contactBottom / Properties.viewportHeight
     const contactSplitRatio = MathUtils.fit(contactShowScreenOffset, 1, 1.5, 0, 1, Quad.easeInOut)
+    const contactUnSplitRatio = MathUtils.fit(contactHideScreenOffset, -1.5, -1, 0, -1, Quad.easeInOut)
 
-    const splitOffset = MathUtils.mix(contactSplitRatio, 0, 0.5)
+    const splitOffset = MathUtils.mix(contactSplitRatio + contactUnSplitRatio, 0, 0.5)
 
     screenLeftMeshRef.current?.position.setX(-splitOffset)
     screenRightMeshRef.current?.position.setX(splitOffset)
