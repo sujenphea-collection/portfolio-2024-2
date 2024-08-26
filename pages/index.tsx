@@ -933,8 +933,16 @@ Stage.displayName = "Stage"
 
 const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  // load
   const xLogoGeometryRef = useRef<BufferGeometry>()
   const githubLogoGeometryRef = useRef<BufferGeometry>()
+
+  // scene
+  const xLogoMeshRef = useRef<Mesh | null>(null)
+  const githubLogoMeshRef = useRef<Mesh | null>(null)
+
+  // ui
+  const contactUI = useRef(document.getElementById(contactSectionId))
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -969,19 +977,40 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     loadItems,
   }))
 
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {
+    const contactBounds = contactUI.current?.getBoundingClientRect()
+
+    const contactTop = contactBounds?.top ?? 0
+    const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    let xRatio = MathUtils.fit(contactShowScreenOffset, 1.8, 2.1, 0, 1, Quad.easeInOut)
+    let zRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 1.8, 0, 1, Quad.easeInOut)
+    xLogoMeshRef.current?.position.setX(MathUtils.mix(0, -0.5, xRatio))
+    xLogoMeshRef.current?.position.setY(0.35)
+    xLogoMeshRef.current?.position.setZ(MathUtils.mix(-4, -2.3, zRatio))
+
+    xRatio = MathUtils.fit(contactShowScreenOffset, 2.0, 2.3, 0, 1, Quad.easeInOut)
+    zRatio = MathUtils.fit(contactShowScreenOffset, 1.7, 2.0, 0, 1, Quad.easeInOut)
+    githubLogoMeshRef.current?.position.setX(MathUtils.mix(0, 0.5, xRatio))
+    githubLogoMeshRef.current?.position.setY(0.35)
+    githubLogoMeshRef.current?.position.setZ(MathUtils.mix(-5, -2.3, zRatio))
+  })
+
   /* ---------------------------------- main ---------------------------------- */
   return (
     props.show && (
       <group>
-        <mesh geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[-0.5, 0.35, -2.3]}>
+        <mesh ref={xLogoMeshRef} geometry={xLogoGeometryRef.current} scale={[0.2, 0.2, 0.2]} position={[0, 0.35, -4]}>
           <meshBasicMaterial />
         </mesh>
 
         <mesh
+          ref={githubLogoMeshRef}
           geometry={githubLogoGeometryRef.current}
           rotation={[Math.PI * 0.5, 0, 0]}
           scale={[16, 16, 16]}
-          position={[0.5, 0.35, -2.3]}
+          position={[0, 0.35, -4]}
         >
           <meshBasicMaterial />
         </mesh>
@@ -1416,7 +1445,7 @@ export default function Home() {
         </div>
 
         {/* contact */}
-        <div id={contactSectionId} className="pb-[150vh]">
+        <div id={contactSectionId} className="pb-[250vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div
               className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
