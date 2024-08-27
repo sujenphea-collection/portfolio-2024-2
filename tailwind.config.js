@@ -48,10 +48,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: [
-          // "var(--fkGrotesk)",
-          defaultSansFonts,
-        ],
+        sans: ["ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "var(--nunito)", defaultSansFonts],
         heading: [
           // "var(--drukWide)",
           defaultHeadingFonts,

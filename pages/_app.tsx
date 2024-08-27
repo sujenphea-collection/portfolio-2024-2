@@ -1,29 +1,36 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import gsap from "gsap"
 import { AppProps } from "next/app"
+import { Nunito } from "next/font/google"
 import Head from "next/head"
-import { ReactNode, useCallback, useEffect, useState } from "react"
-import { PerspectiveCamera, ShaderChunk } from "three"
-import { r3f } from "../src/experience/Three"
+import Link from "next/link"
+import { useRouter } from "next/router"
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { AboutScene } from "../src/experience/about/AboutScene"
+import { FboHelper } from "../src/experience/FBOHelper"
+import { HomeExperience } from "../src/experience/home/HomeScene"
+import { Pass } from "../src/experience/Pass"
+import { SceneHandle } from "../src/experience/types/SceneHandle"
+import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
+import { OutputPass } from "../src/passes/outputPass/outputPass"
 import lights from "../src/shaders/utils/lights.glsl"
+import { Input } from "../src/utils/input"
+import { Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
-import { Input } from "../src/utils/input"
 import "../styles/global.css"
 
 /* -------------------------------------------------------------------------- */
 /*                                    fonts                                   */
 /* -------------------------------------------------------------------------- */
-// export const drukWideFont = localFont({
-//   src: [
-//     { path: "../public/fonts/DrukWide-Medium-Trial.otf", weight: "400" },
-//     { path: "../public/fonts/DrukWide-Bold-Trial.otf", weight: "600" },
-//     { path: "../public/fonts/DrukWide-Heavy-Trial.otf", weight: "800" },
-//   ],
-//   variable: "--drukWide",
-//   display: "swap",
-// })
+export const nunitoFont = Nunito({
+  subsets: ["latin"],
+  variable: "--nunito",
+  display: "swap",
+})
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -46,7 +53,10 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     Properties.deltaTime = delta
+    Properties.globalUniforms.u_deltaTime.value = delta
+
     Properties.time += delta
+    Properties.globalUniforms.u_time.value += delta
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -54,6 +64,7 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   useEffect(() => {
     Properties.gl = gl
     Input.preInit()
+    FboHelper.init(gl)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shaderChunk = ShaderChunk as any
@@ -79,7 +90,243 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   return <></>
 }
 
-const Scene = (props: { onEngineSetup: () => void }) => {
+const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
+  const { asPath } = useRouter()
+
+  /* ---------------------------------- refs ---------------------------------- */
+  // router
+  const prevRoute = useRef<string | null>(null)
+
+  // scenes
+  const aboutSceneRef = useRef<SceneHandle | null>(null)
+  const homeSceneRef = useRef<SceneHandle | null>(null)
+
+  // passes
+  const aboutTransitionPass = useRef(new AboutTransition())
+  const outputPass = useRef(new OutputPass())
+  const passQueue = useRef<Pass[]>([])
+
+  // render
+  const currRender = useRef<{ scene?: Scene; camera?: Camera }>({})
+  const routesToUpdate = useRef<string[]>([])
+
+  // render targets
+  const sceneRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+  const fromRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+  const toRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+
+  // params
+  const transitioning = useRef(false)
+  const needsTransition = useRef(false)
+
+  /* -------------------------------- functions ------------------------------- */
+  const resize = () => {
+    aboutTransitionPass.current.resize(window.innerWidth, window.innerHeight)
+
+    sceneRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+    fromRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+    toRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+  }
+
+  const toAboutTransition = useCallback((fromRoute: string) => {
+    if (!aboutTransitionPass.current.material) {
+      return
+    }
+
+    aboutTransitionPass.current.reverse = false
+    aboutTransitionPass.current.toRenderScene = aboutSceneRef.current?.scene()
+    aboutTransitionPass.current.toRenderCamera = aboutSceneRef.current?.camera()
+    passQueue.current.push(aboutTransitionPass.current)
+
+    gsap
+      .timeline({
+        defaults: { duration: 3, ease: "expo.inOut" },
+        onStart: () => {
+          transitioning.current = true
+        },
+        onComplete: () => {
+          transitioning.current = false
+        },
+      })
+      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 0 }, { value: 1 }, "<")
+      .call(
+        () => {
+          // update renders
+          currRender.current = {
+            scene: aboutSceneRef.current?.scene(),
+            camera: aboutSceneRef.current?.camera(),
+          }
+        },
+        undefined,
+        ">"
+      )
+      .call(
+        () => {
+          // update routes to update
+          routesToUpdate.current.splice(routesToUpdate.current.indexOf(fromRoute), 1)
+
+          // update passes
+          const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
+          passQueue.current.splice(passIndex, 1)
+        },
+        undefined,
+        "+=0.1"
+      )
+  }, [])
+
+  const fromAboutTransition = useCallback(() => {
+    if (!aboutTransitionPass.current.material) {
+      return
+    }
+
+    aboutTransitionPass.current.reverse = true
+    aboutTransitionPass.current.toRenderScene = homeSceneRef.current?.scene()
+    aboutTransitionPass.current.toRenderCamera = homeSceneRef.current?.camera()
+    passQueue.current.push(aboutTransitionPass.current)
+
+    gsap
+      .timeline({
+        defaults: { duration: 3, ease: "expo.inOut" },
+        onStart: () => {
+          transitioning.current = true
+        },
+        onComplete: () => {
+          // update renders
+          currRender.current = {
+            scene: homeSceneRef.current?.scene(),
+            camera: homeSceneRef.current?.camera(),
+          }
+
+          // update routes to update
+          routesToUpdate.current.splice(routesToUpdate.current.indexOf("/world"), 1)
+
+          // update passes
+          const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
+          passQueue.current.splice(passIndex, 1)
+
+          // post update
+          transitioning.current = false
+        },
+      })
+      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
+  }, [])
+
+  const onRouteUpdated = () => {
+    if (asPath === "/about") {
+      toAboutTransition(prevRoute.current || "")
+    } else if (prevRoute.current === "/about") {
+      fromAboutTransition()
+    }
+
+    routesToUpdate.current.push(asPath)
+    prevRoute.current = asPath
+  }
+
+  /* --------------------------------- render --------------------------------- */
+  // render
+  useFrame(({ gl }) => {
+    if (!currRender.current.scene || !currRender.current.camera) {
+      return
+    }
+
+    const sortedQueue = passQueue.current
+      .filter((q) => q.enabled)
+      .sort((x: Pass, y: Pass) => {
+        return x.renderOrder === y.renderOrder ? 0 : x.renderOrder - y.renderOrder
+      })
+
+    if (sortedQueue.length > 0) {
+      // render current scene
+      gl.setRenderTarget(fromRenderTarget.current)
+      gl.render(currRender.current.scene, currRender.current.camera)
+
+      // use texture in pass
+      sortedQueue.forEach((pass, i, arr) => {
+        pass.render(
+          fromRenderTarget.current.texture,
+          toRenderTarget.current,
+          currRender.current.camera!,
+          i === arr.length - 1
+        )
+
+        const temp = fromRenderTarget.current
+        fromRenderTarget.current = toRenderTarget.current
+        toRenderTarget.current = temp
+      })
+    } else {
+      gl.setRenderTarget(null)
+      gl.render(currRender.current.scene, currRender.current.camera)
+    }
+
+    // transition
+    if (!transitioning.current && needsTransition.current) {
+      onRouteUpdated()
+
+      // post update
+      needsTransition.current = false
+    }
+  }, 1)
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup initial scene
+  useEffect(() => {
+    currRender.current.scene = homeSceneRef.current?.scene()
+    currRender.current.camera = homeSceneRef.current?.camera()
+  }, [])
+
+  // setup transition passes
+  useEffect(() => {
+    aboutTransitionPass.current.init(aboutSceneRef.current?.scene(), aboutSceneRef.current?.camera())
+
+    outputPass.current.init()
+    passQueue.current.push(outputPass.current)
+  }, [])
+
+  // resize
+  useEffect(() => {
+    resize()
+
+    window.addEventListener("resize", resize)
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // transition
+  useEffect(() => {
+    if (transitioning.current) {
+      needsTransition.current = true
+      return
+    }
+
+    onRouteUpdated()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asPath])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <>
+      <AboutScene ref={aboutSceneRef} />
+      <HomeExperience
+        ref={homeSceneRef}
+        loader={props.loader}
+        preinitComplete={props.preinitComplete}
+        show={props.show}
+      />
+    </>
+  )
+}
+
+const Experience = (props: {
+  engineSetup: boolean
+  onEngineSetup: () => void
+  loader: Loader
+  preinitComplete: () => void
+  show: boolean
+}) => {
+  /* ---------------------------------- main ---------------------------------- */
   return (
     <Canvas
       camera={{
@@ -91,8 +338,117 @@ const Scene = (props: { onEngineSetup: () => void }) => {
     >
       <Setup onEngineSetup={props.onEngineSetup} />
 
-      <r3f.Out />
+      {props.engineSetup && (
+        <SceneRender loader={props.loader} preinitComplete={props.preinitComplete} show={props.show} />
+      )}
     </Canvas>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 components                                 */
+/* -------------------------------------------------------------------------- */
+const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () => void }) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const progressBarRef = useRef<HTMLDivElement | null>(null)
+
+  /* --------------------------------- states --------------------------------- */
+  const [loaded, setLoaded] = useState(false)
+  const loadedRef = useRef(false)
+
+  /* -------------------------------- functions ------------------------------- */
+  const progress = useCallback((percent: number) => {
+    gsap
+      .timeline({
+        onComplete: () => {
+          if (!loadedRef.current && percent >= 100) {
+            loadedRef.current = true
+            setLoaded(true)
+          }
+        },
+      })
+      .to(progressBarRef.current, { scaleX: `${percent - 0.1}%`, duration: 1 })
+  }, [])
+
+  const dismiss = () => {
+    props.onDismiss()
+
+    gsap.to(containerRef.current, {
+      autoAlpha: 0,
+      duration: 0.5,
+      delay: 0.2,
+    })
+  }
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup
+  useEffect(() => {
+    gsap.set(progressBarRef.current, { scaleX: 0 })
+  }, [])
+
+  // setup progress
+  useEffect(() => {
+    // eslint-disable-next-line no-param-reassign
+    props.loader.onProgress = progress
+  }, [progress, props])
+
+  // start loader
+  useEffect(() => {
+    if (!props.startLoader) {
+      return
+    }
+
+    props.loader?.start()
+  }, [props.loader, props.startLoader])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div ref={containerRef} className={cn("z-[1]", "fixed inset-0", "bg-white")}>
+      {/* bg */}
+      <div
+        className={cn("absolute inset-0", "pointer-events-none select-none")}
+        style={{
+          background: "linear-gradient(90deg, #E0EAFC, #CFDEF3)",
+        }}
+      />
+
+      {/* content */}
+      <div className={cn("relative h-full w-full", "flex flex-col items-center justify-center")}>
+        {/* progress bar */}
+        <div className={cn("h-[2px] w-1/4 max-w-[400px]", "rounded-full", "overflow-hidden")}>
+          <div
+            ref={progressBarRef}
+            className={cn("h-full w-full", "rounded-[inherit]", "origin-center")}
+            style={{
+              background: "linear-gradient(90deg, #141E30, #243B55)",
+              backgroundSize: "400px 20px",
+              backgroundRepeat: "repeat",
+              backgroundOrigin: "center",
+            }}
+          />
+        </div>
+
+        {/* continue button */}
+        <button
+          type="button"
+          disabled={!loaded}
+          onClick={dismiss}
+          className={cn(
+            "relative mt-8",
+            "text-bgColor",
+            "rounded-[40px]",
+            "transition-opacity duration-200",
+            "disabled:opacity-40"
+          )}
+        >
+          {/* content */}
+          <div className={cn("relative px-10 py-3", "rounded-[inherit] bg-contentColor")}>
+            <div className={cn("text-sm font-medium uppercase")}>Continue</div>
+          </div>
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -100,8 +456,30 @@ const Scene = (props: { onEngineSetup: () => void }) => {
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
 const Layout = (props: { children: ReactNode }) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const sectionsToPreinit = useRef(1)
+  const loader = useRef<Loader>(null!)
+
   /* --------------------------------- states --------------------------------- */
   const [engineSetup, setEngineSetup] = useState(false)
+
+  // loader
+  const [startLoader, setStartLoader] = useState(false)
+  const [show, setShow] = useState(false)
+
+  /* -------------------------------- functions ------------------------------- */
+  const onPreinitComplete = () => {
+    sectionsToPreinit.current -= 1
+
+    if (sectionsToPreinit.current <= 0) {
+      setStartLoader(true)
+    }
+  }
+
+  /* --------------------------------- effects -------------------------------- */
+  useEffect(() => {
+    loader.current = new Loader(Properties.gl)
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -111,9 +489,29 @@ const Layout = (props: { children: ReactNode }) => {
         <title>Template</title>
       </Head>
 
+      {/* loader */}
+      {engineSetup && <Preloader loader={loader.current} startLoader={startLoader} onDismiss={() => setShow(true)} />}
+
       {/* scene */}
       <div className={cn("fixed inset-0 h-screen w-screen", "pointer-events-none select-none")}>
-        <Scene onEngineSetup={() => setEngineSetup(true)} />
+        <Experience
+          engineSetup={engineSetup}
+          onEngineSetup={() => setEngineSetup(true)}
+          loader={loader.current}
+          preinitComplete={onPreinitComplete}
+          show={show}
+        />
+      </div>
+
+      {/* header */}
+      <div className="fixed left-1/2 top-8 -translate-x-1/2">
+        <div className="text-lg font-medium uppercase text-[#aaa]">Sujen Phea</div>
+      </div>
+
+      {/* navigation */}
+      <div className={cn("fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col gap-2")}>
+        <Link href="/">Home</Link>
+        <Link href="/about">About</Link>
       </div>
 
       {/* main */}

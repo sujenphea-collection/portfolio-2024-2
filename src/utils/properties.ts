@@ -12,4 +12,10 @@ export class Properties {
 
   // gl
   static gl: WebGLRenderer
+
+  // uniforms
+  static globalUniforms = {
+    u_time: { value: 0 },
+    u_deltaTime: { value: 0 },
+  }
 }

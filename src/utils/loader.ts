@@ -1,4 +1,12 @@
-import { ClampToEdgeWrapping, LinearFilter, SRGBColorSpace, TextureLoader, VideoTexture, WebGLRenderer } from "three"
+import {
+  ClampToEdgeWrapping,
+  LinearFilter,
+  SRGBColorSpace,
+  Texture as _Texture,
+  TextureLoader,
+  VideoTexture,
+  WebGLRenderer,
+} from "three"
 import { DRACOLoader, GLTFLoader, KTX2Loader, OBJLoader } from "three-stdlib"
 
 export enum ItemType {
@@ -35,7 +43,7 @@ export class Loader {
   queue: Item[] = []
 
   // loaders
-  textureLoader = new TextureLoader()
+  static textureLoader = new TextureLoader()
 
   ktx2Loader = new KTX2Loader()
 
@@ -61,7 +69,7 @@ export class Loader {
 
   /* --------------------------------- loaders -------------------------------- */
   loadTexture(item: Item) {
-    const texture = this.textureLoader.load(item.url, (tex) => {
+    const texture = Loader.textureLoader.load(item.url, (tex) => {
       // eslint-disable-next-line no-param-reassign
       item.content = tex
 
@@ -258,6 +266,22 @@ export class Loader {
         item.content = videoEl
         this.onItemLoad(item)
       })
+  }
+
+  /* --------------------------------- static --------------------------------- */
+  static loadTexture(url: string, options?: { flipY?: boolean; onLoad?: (texture: _Texture) => void }) {
+    const texture = this.textureLoader.load(url, (tex) => {
+      options?.onLoad?.(tex)
+    })
+
+    texture.minFilter = LinearFilter
+    texture.magFilter = LinearFilter
+    texture.wrapS = ClampToEdgeWrapping
+    texture.wrapT = ClampToEdgeWrapping
+    texture.flipY = options?.flipY === undefined ? false : options.flipY
+    texture.needsUpdate = true
+
+    return texture
   }
 
   /* ---------------------------------- utils --------------------------------- */
