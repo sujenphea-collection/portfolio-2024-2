@@ -3,6 +3,8 @@ import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { AppProps } from "next/app"
 import Head from "next/head"
+import Link from "next/link"
+import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { AboutScene } from "../src/experience/about/AboutScene"
@@ -93,8 +95,12 @@ const Setup = (props: { onEngineSetup: () => void }) => {
 
 const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   const { camera } = useThree()
+  const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
+  // router
+  const prevRoute = useRef<string | null>(null)
+
   // scenes
   const aboutSceneRef = useRef<SceneHandle | null>(null)
   const homeScene = useRef(new Scene())
@@ -112,6 +118,10 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   const sceneRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
   const fromRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
   const toRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+
+  // params
+  const transitioning = useRef(false)
+  const needsTransition = useRef(false)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -135,6 +145,12 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     gsap
       .timeline({
         defaults: { duration: 3, ease: "expo.inOut" },
+        onStart: () => {
+          transitioning.current = true
+        },
+        onComplete: () => {
+          transitioning.current = false
+        },
       })
       .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 0 }, { value: 1 }, "<")
       .call(
@@ -161,6 +177,54 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         "+=0.1"
       )
   }, [])
+
+  const fromAboutTransition = useCallback(() => {
+    if (!aboutTransitionPass.current.material) {
+      return
+    }
+
+    aboutTransitionPass.current.reverse = true
+    aboutTransitionPass.current.toRenderScene = homeScene.current
+    aboutTransitionPass.current.toRenderCamera = camera
+    passQueue.current.push(aboutTransitionPass.current)
+
+    gsap
+      .timeline({
+        defaults: { duration: 3, ease: "expo.inOut" },
+        onStart: () => {
+          transitioning.current = true
+        },
+        onComplete: () => {
+          // update renders
+          currRender.current = {
+            scene: homeScene.current,
+            camera,
+          }
+
+          // update routes to update
+          routesToUpdate.current.splice(routesToUpdate.current.indexOf("/world"), 1)
+
+          // update passes
+          const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
+          passQueue.current.splice(passIndex, 1)
+
+          // post update
+          transitioning.current = false
+        },
+      })
+      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
+  }, [camera])
+
+  const onRouteUpdated = () => {
+    if (asPath === "/about") {
+      toAboutTransition(prevRoute.current || "")
+    } else if (prevRoute.current === "/about") {
+      fromAboutTransition()
+    }
+
+    routesToUpdate.current.push(asPath)
+    prevRoute.current = asPath
+  }
 
   /* --------------------------------- render --------------------------------- */
   // render
@@ -197,6 +261,14 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
       gl.setRenderTarget(null)
       gl.render(currRender.current.scene, currRender.current.camera)
     }
+
+    // transition
+    if (!transitioning.current && needsTransition.current) {
+      onRouteUpdated()
+
+      // post update
+      needsTransition.current = false
+    }
   }, 1)
 
   /* --------------------------------- effects -------------------------------- */
@@ -230,12 +302,14 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   // transition
   useEffect(() => {
-    setTimeout(() => {
-      toAboutTransition("")
-    }, 2e3)
+    if (transitioning.current) {
+      needsTransition.current = true
+      return
+    }
 
+    onRouteUpdated()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -432,6 +506,12 @@ const Layout = (props: { children: ReactNode }) => {
           preinitComplete={onPreinitComplete}
           show={show}
         />
+      </div>
+
+      {/* navigation */}
+      <div className={cn("fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col gap-2")}>
+        <Link href="/">Home</Link>
+        <Link href="/about">About</Link>
       </div>
 
       {/* main */}
