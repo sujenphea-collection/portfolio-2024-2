@@ -88,12 +88,19 @@ export class FboHelper {
   }
 
   static copy(texture: Texture, camera: Camera, renderTarget: WebGLRenderTarget | null) {
-    const material = this.copyMaterial
-
-    if (material) {
-      material.uniforms.u_texture.value = texture
-      this.render(material, camera, renderTarget)
+    if (!this.copyMaterial) {
+      this.copyMaterial = new RawShaderMaterial({
+        uniforms: { u_texture: { value: null } },
+        vertexShader: this.precisionPrefix + blitVert,
+        fragmentShader: this.precisionPrefix + blitFrag,
+        depthTest: false,
+        depthWrite: false,
+        blending: NoBlending,
+      })
     }
+
+    this.copyMaterial.uniforms.u_texture.value = texture
+    this.render(this.copyMaterial, camera, renderTarget)
   }
 
   /* ---------------------------------- color --------------------------------- */

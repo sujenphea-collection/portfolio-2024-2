@@ -1,12 +1,14 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { Text } from "@react-three/drei"
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber"
+import gsap from "gsap"
 import { AppProps } from "next/app"
 import Head from "next/head"
 import { forwardRef, ReactNode, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { FboHelper } from "../src/experience/FBOHelper"
-import { Postprocessing } from "../src/experience/Postprocessing"
+import { Pass } from "../src/experience/Pass"
+import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
 import lights from "../src/shaders/utils/lights.glsl"
 import { Input } from "../src/utils/input"
 import { Properties } from "../src/utils/properties"
@@ -163,20 +165,97 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   return <></>
 }
 
-const SceneRender = (props: { postprocessing: Postprocessing }) => {
+const SceneRender = () => {
   /* ---------------------------------- refs ---------------------------------- */
   // scenes
   const sceneOneRef = useRef<SceneHandle | null>(null)
   const sceneTwoRef = useRef<SceneHandle | null>(null)
 
+  // transition passes
+  const aboutTransitionPass = useRef(new AboutTransition())
+  const queue = useRef<Pass[]>([])
+
   // render
   const currRender = useRef<{ scene?: Scene; camera?: Camera }>({})
+  const routesToUpdate = useRef<string[]>([])
+
+  // render targets
+  const sceneRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+  const fromRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+  const toRenderTarget = useRef(FboHelper.createRenderTarget(1, 1))
+
+  /* -------------------------------- functions ------------------------------- */
+  const resize = () => {
+    aboutTransitionPass.current.resize(window.innerWidth, window.innerHeight)
+
+    sceneRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+    fromRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+    toRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
+  }
+
+  const toAboutTransition = useCallback((fromRoute: string) => {
+    if (!aboutTransitionPass.current.material) {
+      return
+    }
+
+    aboutTransitionPass.current.reverse = false
+    aboutTransitionPass.current.toRenderScene = sceneTwoRef.current?.scene()
+    aboutTransitionPass.current.toRenderCamera = sceneTwoRef.current?.camera()
+    queue.current.push(aboutTransitionPass.current)
+
+    gsap
+      .timeline({
+        defaults: { duration: 3, ease: "expo.inOut" },
+      })
+      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 0 }, { value: 1 }, "<")
+      .call(
+        () => {
+          // update renders
+          currRender.current = {
+            scene: sceneTwoRef.current?.scene(),
+            camera: sceneTwoRef.current?.camera(),
+          }
+        },
+        undefined,
+        ">"
+      )
+      .call(
+        () => {
+          // update routes to update
+          routesToUpdate.current.splice(routesToUpdate.current.indexOf(fromRoute), 1)
+
+          // update passes
+          const passIndex = queue.current.indexOf(aboutTransitionPass.current)
+          queue.current.splice(passIndex, 1)
+        },
+        undefined,
+        "+=0.1"
+      )
+  }, [])
 
   /* --------------------------------- render --------------------------------- */
   // render
-  useFrame(() => {
-    if (currRender.current.scene && currRender.current.camera) {
-      props.postprocessing.render(currRender.current.scene, currRender.current.camera)
+  useFrame(({ gl }) => {
+    if (!currRender.current.scene || !currRender.current.camera) {
+      return
+    }
+
+    if (queue.current.length > 0) {
+      // render current scene
+      gl.setRenderTarget(sceneRenderTarget.current)
+      gl.render(currRender.current.scene, currRender.current.camera)
+
+      // use texture in pass
+      queue.current[0].render(
+        sceneRenderTarget.current.texture,
+        toRenderTarget.current,
+        currRender.current.camera,
+        true,
+        true
+      )
+    } else {
+      gl.setRenderTarget(null)
+      gl.render(currRender.current.scene, currRender.current.camera)
     }
   }, 1)
 
@@ -185,6 +264,32 @@ const SceneRender = (props: { postprocessing: Postprocessing }) => {
   useEffect(() => {
     currRender.current.scene = sceneOneRef.current?.scene()
     currRender.current.camera = sceneOneRef.current?.camera()
+  }, [])
+
+  // setup transition passes
+  useEffect(() => {
+    aboutTransitionPass.current.init(sceneTwoRef.current?.scene(), sceneTwoRef.current?.camera())
+  }, [])
+
+  // resize
+  useEffect(() => {
+    resize()
+
+    window.addEventListener("resize", resize)
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // transition
+  useEffect(() => {
+    setTimeout(() => {
+      toAboutTransition("")
+    }, 1e3)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ---------------------------------- main ---------------------------------- */
@@ -197,8 +302,6 @@ const SceneRender = (props: { postprocessing: Postprocessing }) => {
 }
 
 const Experience = (props: { onEngineSetup: () => void }) => {
-  const postprocessing = useRef(new Postprocessing())
-
   /* ---------------------------------- main ---------------------------------- */
   return (
     <Canvas
@@ -212,7 +315,7 @@ const Experience = (props: { onEngineSetup: () => void }) => {
       <Setup onEngineSetup={props.onEngineSetup} />
 
       {/* <r3f.Out /> */}
-      <SceneRender postprocessing={postprocessing.current} />
+      <SceneRender />
     </Canvas>
   )
 }
