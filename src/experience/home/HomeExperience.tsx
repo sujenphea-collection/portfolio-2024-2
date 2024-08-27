@@ -824,8 +824,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         index <= 0 ? projectTextures.current[0] : projectTextures.current[index - 1]
       screenUniforms.current.u_texture2.value = projectTextures.current[index]
 
-      const bounds = projectsIndividualUI.current[index].getBoundingClientRect()
-      ratio = MathUtils.fit(bounds.top, 0, -bounds.height * 0.2, 0, 1)
+      const bounds = projectsIndividualUI.current[index]?.getBoundingClientRect()
+      ratio = MathUtils.fit(bounds?.top || 0, 0, -(bounds?.height || 0) * 0.2, 0, 1)
     }
 
     screenUniforms.current.u_mixRatio.value = ratio
