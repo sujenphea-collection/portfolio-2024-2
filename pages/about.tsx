@@ -3,7 +3,18 @@ import { cn } from "../src/utils/utils"
 export default function About() {
   return (
     <div className="relative">
-      <div className="">
+      {/* screen 1 */}
+      <div className="relative">
+        {/* decoration */}
+        <div className={cn("absolute inset-0", "pointer-events-none, select-none")}>
+          {/* top */}
+          <div className={cn("absolute inset-x-0 top-5 h-px", "border-t border-[#343434]")} />
+
+          {/* bottom */}
+          <div className={cn("absolute inset-x-0 bottom-5 h-px", "border-t border-[#343434]")} />
+        </div>
+
+        {/* content */}
         <div
           className={cn("relative min-h-[100vh]", "px-[max(3.5vw,100px)]", "flex flex-col items-center justify-center")}
         >
