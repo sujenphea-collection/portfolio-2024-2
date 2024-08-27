@@ -40,17 +40,35 @@ type SceneHandle = {
 }
 
 const AboutScene = forwardRef<SceneHandle>((_, ref) => {
-  const { camera: _camera } = useThree()
-
   /* ---------------------------------- refs ---------------------------------- */
   const scene = useRef(new Scene())
-  const camera = useRef(_camera)
+  const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
+
+  /* -------------------------------- functions ------------------------------- */
+  const resize = () => {
+    camera.current.position.set(0, 0, 5)
+    camera.current.aspect = window.innerWidth / window.innerHeight
+    camera.current.updateProjectionMatrix()
+  }
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     scene: () => scene.current,
     camera: () => camera.current,
   }))
+
+  /* --------------------------------- effects -------------------------------- */
+  // resize
+  useEffect(() => {
+    resize()
+
+    window.addEventListener("resize", resize)
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return createPortal(
