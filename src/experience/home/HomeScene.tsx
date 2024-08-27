@@ -957,6 +957,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 Stage.displayName = "Stage"
 
 const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
   // load
   const xLogoGeometryRef = useRef<BufferGeometry>()
@@ -1017,6 +1019,10 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   }
 
   const update = (delta: number) => {
+    if (asPath !== "/") {
+      return
+    }
+
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
     // lerp
@@ -1114,6 +1120,11 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     brownianMotion.current.positionFrequency = 0.1
     brownianMotion.current.rotationFrequency = 0.1
   }, [])
+
+  // update UI
+  useEffect(() => {
+    contactUI.current = document.getElementById(contactSectionId)
+  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
