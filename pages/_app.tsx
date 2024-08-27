@@ -8,6 +8,7 @@ import { forwardRef, ReactNode, useCallback, useEffect, useImperativeHandle, use
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { FboHelper } from "../src/experience/FBOHelper"
 import { Pass } from "../src/experience/Pass"
+import { r3f } from "../src/experience/Three"
 import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
 import { OutputPass } from "../src/passes/outputPass/outputPass"
 import lights from "../src/shaders/utils/lights.glsl"
@@ -38,7 +39,7 @@ type SceneHandle = {
   camera: () => Camera
 }
 
-const SceneOne = forwardRef<SceneHandle>((_, ref) => {
+const AboutScene = forwardRef<SceneHandle>((_, ref) => {
   const { camera: _camera } = useThree()
 
   /* ---------------------------------- refs ---------------------------------- */
@@ -69,44 +70,7 @@ const SceneOne = forwardRef<SceneHandle>((_, ref) => {
     scene.current
   )
 })
-SceneOne.displayName = "SceneOne"
-
-const SceneTwo = forwardRef<SceneHandle>((_, ref) => {
-  const { camera: _camera } = useThree()
-
-  /* ---------------------------------- refs ---------------------------------- */
-  const scene = useRef(new Scene())
-  const camera = useRef(_camera)
-
-  /* --------------------------------- handle --------------------------------- */
-  useImperativeHandle(ref, () => ({
-    scene: () => scene.current,
-    camera: () => camera.current,
-  }))
-
-  /* ---------------------------------- main ---------------------------------- */
-  return createPortal(
-    <group position={[0, 0, -1]}>
-      <mesh position={[-1.5, 0, 0]}>
-        <boxGeometry />
-        <meshBasicMaterial color={0x729be8} />
-      </mesh>
-
-      <Text fontSize={0.5}>Two</Text>
-
-      <mesh position={[1.5, 0, 0]}>
-        <torusKnotGeometry args={[0.5, 0.15, 64, 8, 2, 3]} />
-        <meshStandardMaterial color={0x729be8} />
-      </mesh>
-
-      <pointLight position={[1.5, 3, 0]} intensity={10} />
-      <pointLight position={[1.5, -3, 0]} intensity={10} />
-      <ambientLight intensity={0.5} />
-    </group>,
-    scene.current
-  )
-})
-SceneTwo.displayName = "SceneTwo"
+AboutScene.displayName = "AboutScene"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -167,10 +131,12 @@ const Setup = (props: { onEngineSetup: () => void }) => {
 }
 
 const SceneRender = () => {
+  const { camera } = useThree()
+
   /* ---------------------------------- refs ---------------------------------- */
   // scenes
-  const sceneOneRef = useRef<SceneHandle | null>(null)
-  const sceneTwoRef = useRef<SceneHandle | null>(null)
+  const aboutSceneRef = useRef<SceneHandle | null>(null)
+  const homeScene = useRef(new Scene())
 
   // passes
   const aboutTransitionPass = useRef(new AboutTransition())
@@ -201,8 +167,8 @@ const SceneRender = () => {
     }
 
     aboutTransitionPass.current.reverse = false
-    aboutTransitionPass.current.toRenderScene = sceneTwoRef.current?.scene()
-    aboutTransitionPass.current.toRenderCamera = sceneTwoRef.current?.camera()
+    aboutTransitionPass.current.toRenderScene = aboutSceneRef.current?.scene()
+    aboutTransitionPass.current.toRenderCamera = aboutSceneRef.current?.camera()
     passQueue.current.push(aboutTransitionPass.current)
 
     gsap
@@ -214,8 +180,8 @@ const SceneRender = () => {
         () => {
           // update renders
           currRender.current = {
-            scene: sceneTwoRef.current?.scene(),
-            camera: sceneTwoRef.current?.camera(),
+            scene: aboutSceneRef.current?.scene(),
+            camera: aboutSceneRef.current?.camera(),
           }
         },
         undefined,
@@ -275,13 +241,15 @@ const SceneRender = () => {
   /* --------------------------------- effects -------------------------------- */
   // setup initial scene
   useEffect(() => {
-    currRender.current.scene = sceneOneRef.current?.scene()
-    currRender.current.camera = sceneOneRef.current?.camera()
+    currRender.current.scene = homeScene.current
+    currRender.current.camera = camera
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // setup transition passes
   useEffect(() => {
-    aboutTransitionPass.current.init(sceneTwoRef.current?.scene(), sceneTwoRef.current?.camera())
+    aboutTransitionPass.current.init(aboutSceneRef.current?.scene(), aboutSceneRef.current?.camera())
 
     outputPass.current.init()
     passQueue.current.push(outputPass.current)
@@ -303,7 +271,7 @@ const SceneRender = () => {
   useEffect(() => {
     setTimeout(() => {
       toAboutTransition("")
-    }, 1e3)
+    }, 2e3)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -311,8 +279,9 @@ const SceneRender = () => {
   /* ---------------------------------- main ---------------------------------- */
   return (
     <>
-      <SceneOne ref={sceneOneRef} />
-      <SceneTwo ref={sceneTwoRef} />
+      <AboutScene ref={aboutSceneRef} />
+
+      {createPortal(<r3f.Out />, homeScene.current)}
     </>
   )
 }
@@ -330,7 +299,6 @@ const Experience = (props: { onEngineSetup: () => void }) => {
     >
       <Setup onEngineSetup={props.onEngineSetup} />
 
-      {/* <r3f.Out /> */}
       <SceneRender />
     </Canvas>
   )
