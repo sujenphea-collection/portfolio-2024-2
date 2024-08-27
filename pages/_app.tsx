@@ -9,6 +9,7 @@ import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { FboHelper } from "../src/experience/FBOHelper"
 import { Pass } from "../src/experience/Pass"
 import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
+import { OutputPass } from "../src/passes/outputPass/outputPass"
 import lights from "../src/shaders/utils/lights.glsl"
 import { Input } from "../src/utils/input"
 import { Properties } from "../src/utils/properties"
@@ -173,6 +174,7 @@ const SceneRender = () => {
 
   // passes
   const aboutTransitionPass = useRef(new AboutTransition())
+  const outputPass = useRef(new OutputPass())
   const passQueue = useRef<Pass[]>([])
 
   // render
@@ -274,6 +276,9 @@ const SceneRender = () => {
   // setup transition passes
   useEffect(() => {
     aboutTransitionPass.current.init(sceneTwoRef.current?.scene(), sceneTwoRef.current?.camera())
+
+    outputPass.current.init()
+    passQueue.current.push(outputPass.current)
   }, [])
 
   // resize
