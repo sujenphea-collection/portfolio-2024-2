@@ -7,13 +7,14 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
+import { HomeExperience } from "../src/experience/home/HomeExperience"
 import { Pass } from "../src/experience/Pass"
-import { r3f } from "../src/experience/Three"
 import { SceneHandle } from "../src/experience/types/SceneHandle"
 import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
 import { OutputPass } from "../src/passes/outputPass/outputPass"
 import lights from "../src/shaders/utils/lights.glsl"
 import { Input } from "../src/utils/input"
+import { Loader } from "../src/utils/loader"
 import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
@@ -90,7 +91,7 @@ const Setup = (props: { onEngineSetup: () => void }) => {
   return <></>
 }
 
-const SceneRender = () => {
+const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
   const { camera } = useThree()
 
   /* ---------------------------------- refs ---------------------------------- */
@@ -241,12 +242,21 @@ const SceneRender = () => {
     <>
       <AboutScene ref={aboutSceneRef} />
 
-      {createPortal(<r3f.Out />, homeScene.current)}
+      {createPortal(
+        <HomeExperience loader={props.loader} preinitComplete={props.preinitComplete} show={props.show} />,
+        homeScene.current
+      )}
     </>
   )
 }
 
-const Experience = (props: { onEngineSetup: () => void }) => {
+const Experience = (props: {
+  engineSetup: boolean
+  onEngineSetup: () => void
+  loader: Loader
+  preinitComplete: () => void
+  show: boolean
+}) => {
   /* ---------------------------------- main ---------------------------------- */
   return (
     <Canvas
@@ -259,8 +269,117 @@ const Experience = (props: { onEngineSetup: () => void }) => {
     >
       <Setup onEngineSetup={props.onEngineSetup} />
 
-      <SceneRender />
+      {props.engineSetup && (
+        <SceneRender loader={props.loader} preinitComplete={props.preinitComplete} show={props.show} />
+      )}
     </Canvas>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 components                                 */
+/* -------------------------------------------------------------------------- */
+const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () => void }) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const progressBarRef = useRef<HTMLDivElement | null>(null)
+
+  /* --------------------------------- states --------------------------------- */
+  const [loaded, setLoaded] = useState(false)
+  const loadedRef = useRef(false)
+
+  /* -------------------------------- functions ------------------------------- */
+  const progress = useCallback((percent: number) => {
+    gsap
+      .timeline({
+        onComplete: () => {
+          if (!loadedRef.current && percent >= 100) {
+            loadedRef.current = true
+            setLoaded(true)
+          }
+        },
+      })
+      .to(progressBarRef.current, { scaleX: `${percent - 0.1}%`, duration: 1 })
+  }, [])
+
+  const dismiss = () => {
+    props.onDismiss()
+
+    gsap.to(containerRef.current, {
+      autoAlpha: 0,
+      duration: 0.5,
+      delay: 0.2,
+    })
+  }
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup
+  useEffect(() => {
+    gsap.set(progressBarRef.current, { scaleX: 0 })
+  }, [])
+
+  // setup progress
+  useEffect(() => {
+    // eslint-disable-next-line no-param-reassign
+    props.loader.onProgress = progress
+  }, [progress, props])
+
+  // start loader
+  useEffect(() => {
+    if (!props.startLoader) {
+      return
+    }
+
+    props.loader?.start()
+  }, [props.loader, props.startLoader])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div ref={containerRef} className={cn("z-[1]", "fixed inset-0", "bg-white")}>
+      {/* bg */}
+      <div
+        className={cn("absolute inset-0", "pointer-events-none select-none")}
+        style={{
+          background: "linear-gradient(90deg, #E0EAFC, #CFDEF3)",
+        }}
+      />
+
+      {/* content */}
+      <div className={cn("relative h-full w-full", "flex flex-col items-center justify-center")}>
+        {/* progress bar */}
+        <div className={cn("h-[2px] w-1/4 max-w-[400px]", "rounded-full", "overflow-hidden")}>
+          <div
+            ref={progressBarRef}
+            className={cn("h-full w-full", "rounded-[inherit]", "origin-center")}
+            style={{
+              background: "linear-gradient(90deg, #141E30, #243B55)",
+              backgroundSize: "400px 20px",
+              backgroundRepeat: "repeat",
+              backgroundOrigin: "center",
+            }}
+          />
+        </div>
+
+        {/* continue button */}
+        <button
+          type="button"
+          disabled={!loaded}
+          onClick={dismiss}
+          className={cn(
+            "relative mt-8",
+            "text-bgColor",
+            "rounded-[40px]",
+            "transition-opacity duration-200",
+            "disabled:opacity-40"
+          )}
+        >
+          {/* content */}
+          <div className={cn("relative px-10 py-3", "rounded-[inherit] bg-contentColor")}>
+            <div className={cn("text-sm font-medium uppercase")}>Continue</div>
+          </div>
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -268,8 +387,30 @@ const Experience = (props: { onEngineSetup: () => void }) => {
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
 const Layout = (props: { children: ReactNode }) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const sectionsToPreinit = useRef(1)
+  const loader = useRef<Loader>(null!)
+
   /* --------------------------------- states --------------------------------- */
   const [engineSetup, setEngineSetup] = useState(false)
+
+  // loader
+  const [startLoader, setStartLoader] = useState(false)
+  const [show, setShow] = useState(false)
+
+  /* -------------------------------- functions ------------------------------- */
+  const onPreinitComplete = () => {
+    sectionsToPreinit.current -= 1
+
+    if (sectionsToPreinit.current <= 0) {
+      setStartLoader(true)
+    }
+  }
+
+  /* --------------------------------- effects -------------------------------- */
+  useEffect(() => {
+    loader.current = new Loader(Properties.gl)
+  }, [])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -279,9 +420,18 @@ const Layout = (props: { children: ReactNode }) => {
         <title>Template</title>
       </Head>
 
+      {/* loader */}
+      {engineSetup && <Preloader loader={loader.current} startLoader={startLoader} onDismiss={() => setShow(true)} />}
+
       {/* scene */}
       <div className={cn("fixed inset-0 h-screen w-screen", "pointer-events-none select-none")}>
-        <Experience onEngineSetup={() => setEngineSetup(true)} />
+        <Experience
+          engineSetup={engineSetup}
+          onEngineSetup={() => setEngineSetup(true)}
+          loader={loader.current}
+          preinitComplete={onPreinitComplete}
+          show={show}
+        />
       </div>
 
       {/* main */}
