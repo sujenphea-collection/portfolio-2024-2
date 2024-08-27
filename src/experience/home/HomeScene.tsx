@@ -1323,7 +1323,6 @@ export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, r
     )
   }, [])
 
-  
   useEffect(() => {
     homeUI.current = document.getElementById(homeSectionId)
     projectsUI.current = document.getElementById(projectsSectionId)

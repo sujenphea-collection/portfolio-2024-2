@@ -240,7 +240,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     if (sortedQueue.length > 0) {
       // render current scene
-      gl.setRenderTarget(null)
+      gl.setRenderTarget(fromRenderTarget.current)
       gl.render(currRender.current.scene, currRender.current.camera)
 
       // use texture in pass
