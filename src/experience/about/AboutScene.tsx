@@ -37,14 +37,9 @@ export const AboutScene = forwardRef<SceneHandle>((_, ref) => {
   /* ---------------------------------- main ---------------------------------- */
   return createPortal(
     <group>
-      <mesh position={[-1.5, 0, 0]}>
-        <boxGeometry />
-        <meshBasicMaterial color={0x73eb93} />
-      </mesh>
-
-      <mesh position={[1.5, 0, 0]}>
-        <torusKnotGeometry args={[0.5, 0.15, 64, 8, 2, 3]} />
-        <meshNormalMaterial />
+      <mesh>
+        <planeGeometry args={[10, 10]} />
+        <meshBasicMaterial color={0x363636} />
       </mesh>
     </group>,
     scene.current

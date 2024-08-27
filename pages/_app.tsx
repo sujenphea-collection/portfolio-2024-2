@@ -2,6 +2,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { AppProps } from "next/app"
+import { Nunito } from "next/font/google"
 import Head from "next/head"
 import Link from "next/link"
 import { useRouter } from "next/router"
@@ -25,15 +26,11 @@ import "../styles/global.css"
 /* -------------------------------------------------------------------------- */
 /*                                    fonts                                   */
 /* -------------------------------------------------------------------------- */
-// export const drukWideFont = localFont({
-//   src: [
-//     { path: "../public/fonts/DrukWide-Medium-Trial.otf", weight: "400" },
-//     { path: "../public/fonts/DrukWide-Bold-Trial.otf", weight: "600" },
-//     { path: "../public/fonts/DrukWide-Heavy-Trial.otf", weight: "800" },
-//   ],
-//   variable: "--drukWide",
-//   display: "swap",
-// })
+export const nunitoFont = Nunito({
+  subsets: ["latin"],
+  variable: "--nunito",
+  display: "swap",
+})
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -504,6 +501,11 @@ const Layout = (props: { children: ReactNode }) => {
           preinitComplete={onPreinitComplete}
           show={show}
         />
+      </div>
+
+      {/* header */}
+      <div className="fixed left-1/2 top-8 -translate-x-1/2">
+        <div className="text-lg font-medium uppercase text-[#aaa]">Sujen Phea</div>
       </div>
 
       {/* navigation */}
