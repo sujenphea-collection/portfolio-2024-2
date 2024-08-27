@@ -32,6 +32,8 @@ export class OutputPass extends Pass {
       uniforms: this.uniforms,
       fragmentShader,
     })
+
+    this.renderOrder = 10
   }
 
   render(

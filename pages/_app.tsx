@@ -242,13 +242,19 @@ const SceneRender = () => {
       return
     }
 
-    if (passQueue.current.length > 0) {
+    const sortedQueue = passQueue.current
+      .filter((q) => q.enabled)
+      .sort((x: Pass, y: Pass) => {
+        return x.renderOrder === y.renderOrder ? 0 : x.renderOrder - y.renderOrder
+      })
+
+    if (sortedQueue.length > 0) {
       // render current scene
       gl.setRenderTarget(fromRenderTarget.current)
       gl.render(currRender.current.scene, currRender.current.camera)
 
       // use texture in pass
-      passQueue.current.forEach((pass, i, arr) => {
+      sortedQueue.forEach((pass, i, arr) => {
         pass.render(
           fromRenderTarget.current.texture,
           toRenderTarget.current,
