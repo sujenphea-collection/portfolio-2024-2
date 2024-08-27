@@ -626,6 +626,8 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 Ground.displayName = "Ground"
 
 const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
   // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
@@ -682,6 +684,8 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   })
 
   const projectTextures = useRef<(Texture | null)[]>([])
+
+  const splitOffset = useRef(0)
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -800,6 +804,14 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
+    // pre update
+    if (asPath !== "/") {
+      screenLeftMeshRef.current?.position.setX(-splitOffset.current)
+      screenRightMeshRef.current?.position.setX(splitOffset.current)
+
+      return
+    }
+
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
@@ -842,10 +854,10 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     const contactSplitRatio = MathUtils.fit(contactShowScreenOffset, 1, 1.5, 0, 1, Quad.easeInOut)
     const contactUnSplitRatio = MathUtils.fit(contactHideScreenOffset, -1.5, -1, 0, -1, Quad.easeInOut)
 
-    const splitOffset = MathUtils.mix(contactSplitRatio + contactUnSplitRatio, 0, 0.5)
+    splitOffset.current = MathUtils.mix(contactSplitRatio + contactUnSplitRatio, 0, 0.5)
 
-    screenLeftMeshRef.current?.position.setX(-splitOffset)
-    screenRightMeshRef.current?.position.setX(splitOffset)
+    screenLeftMeshRef.current?.position.setX(-splitOffset.current)
+    screenRightMeshRef.current?.position.setX(splitOffset.current)
 
     // mouse
     const velocity = { x: mouse.current.velocityX * 10, y: mouse.current.velocityY * 10 }
@@ -864,11 +876,19 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
   /* --------------------------------- effects -------------------------------- */
   // setup UI
   useEffect(() => {
+    homeUI.current = document.getElementById(homeSectionId)
+    projectsUI.current = document.getElementById(projectsSectionId)
+    projectsIndividualUI.current = []
+    contactUI.current = document.getElementById(contactSectionId)
+
     Array.from(projectsUI.current?.children || []).forEach((el) => {
       projectsIndividualUI.current.push(el as HTMLElement)
-      projectTextures.current.push(null)
+
+      if (projectTextures.current.length <= 0) {
+        projectTextures.current.push(null)
+      }
     })
-  }, [])
+  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -1163,7 +1183,7 @@ Contact.displayName = "Contact"
 // eslint-disable-next-line react/no-unused-prop-types
 export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
-  
+
   /* ---------------------------------- refs ---------------------------------- */
   const scene = useRef(new Scene())
   const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
@@ -1198,6 +1218,10 @@ export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, r
   }
 
   const updateCamera = () => {
+    if (asPath !== "/") {
+      return
+    }
+
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const projectsBounds = projectsUI.current?.getBoundingClientRect()
     const aboutBounds = aboutUI.current?.getBoundingClientRect()
@@ -1323,6 +1347,7 @@ export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, r
     )
   }, [])
 
+  // update UI
   useEffect(() => {
     homeUI.current = document.getElementById(homeSectionId)
     projectsUI.current = document.getElementById(projectsSectionId)
