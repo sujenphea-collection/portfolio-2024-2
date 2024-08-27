@@ -503,6 +503,11 @@ const Layout = (props: { children: ReactNode }) => {
         />
       </div>
 
+      {/* header */}
+      <div className="fixed left-1/2 top-8 -translate-x-1/2">
+        <div className="text-lg font-medium uppercase text-[#aaa]">Sujen Phea</div>
+      </div>
+
       {/* navigation */}
       <div className={cn("fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col gap-2")}>
         <Link href="/">Home</Link>
