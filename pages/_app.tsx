@@ -1,14 +1,15 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { Text } from "@react-three/drei"
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { AppProps } from "next/app"
 import Head from "next/head"
-import { forwardRef, ReactNode, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
 import { Pass } from "../src/experience/Pass"
 import { r3f } from "../src/experience/Three"
+import { SceneHandle } from "../src/experience/types/SceneHandle"
 import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
 import { OutputPass } from "../src/passes/outputPass/outputPass"
 import lights from "../src/shaders/utils/lights.glsl"
@@ -30,65 +31,6 @@ import "../styles/global.css"
 //   variable: "--drukWide",
 //   display: "swap",
 // })
-
-/* -------------------------------------------------------------------------- */
-/*                                    test                                    */
-/* -------------------------------------------------------------------------- */
-type SceneHandle = {
-  scene: () => Scene
-  camera: () => Camera
-}
-
-const AboutScene = forwardRef<SceneHandle>((_, ref) => {
-  /* ---------------------------------- refs ---------------------------------- */
-  const scene = useRef(new Scene())
-  const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
-
-  /* -------------------------------- functions ------------------------------- */
-  const resize = () => {
-    camera.current.position.set(0, 0, 5)
-    camera.current.aspect = window.innerWidth / window.innerHeight
-    camera.current.updateProjectionMatrix()
-  }
-
-  /* --------------------------------- handle --------------------------------- */
-  useImperativeHandle(ref, () => ({
-    scene: () => scene.current,
-    camera: () => camera.current,
-  }))
-
-  /* --------------------------------- effects -------------------------------- */
-  // resize
-  useEffect(() => {
-    resize()
-
-    window.addEventListener("resize", resize)
-
-    return () => {
-      window.removeEventListener("resize", resize)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  /* ---------------------------------- main ---------------------------------- */
-  return createPortal(
-    <group>
-      <mesh position={[-1.5, 0, 0]}>
-        <boxGeometry />
-        <meshBasicMaterial color={0x73eb93} />
-      </mesh>
-
-      <Text fontSize={0.5}>One</Text>
-
-      <mesh position={[1.5, 0, 0]}>
-        <torusKnotGeometry args={[0.5, 0.15, 64, 8, 2, 3]} />
-        <meshNormalMaterial />
-      </mesh>
-    </group>,
-    scene.current
-  )
-})
-AboutScene.displayName = "AboutScene"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
