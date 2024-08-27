@@ -1,5 +1,6 @@
-import { useFrame, useThree } from "@react-three/fiber"
+import { createPortal, useFrame } from "@react-three/fiber"
 import { Quad } from "gsap"
+import { useRouter } from "next/router"
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
 import {
   AddEquation,
@@ -63,6 +64,7 @@ import { ItemType, Loader } from "../../utils/loader"
 import { MathUtils } from "../../utils/math"
 import { Properties } from "../../utils/properties"
 import { BrownianMotion } from "../BrownianMotion"
+import { SceneHandle } from "../types/SceneHandle"
 
 /* -------------------------------------------------------------------------- */
 /*                                    types                                   */
@@ -72,6 +74,8 @@ type ExperienceRef = {
   resize?: (width: number, height: number) => void
   update?: (delta: number) => void
 }
+
+type ExperienceProps = { loader: Loader; preinitComplete: () => void; show: boolean }
 
 /* -------------------------------------------------------------------------- */
 /*                                  constants                                 */
@@ -747,7 +751,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
     loader.add("/projects/balance.mp4", ItemType.VideoTexture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
-        /// tex.userData.video.play()
+        tex.userData.video.play()
         tex.userData.video.loop = true
 
         screenUniforms.current.u_texture.value = tex
@@ -1157,10 +1161,13 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 Contact.displayName = "Contact"
 
 // eslint-disable-next-line react/no-unused-prop-types
-export const HomeExperience = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
-  const { camera } = useThree()
-
+export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, ref) => {
+  const { asPath } = useRouter()
+  
   /* ---------------------------------- refs ---------------------------------- */
+  const scene = useRef(new Scene())
+  const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
+
   // scene
   const particlesRef = useRef<ExperienceRef | null>(null)
   const dirtRef = useRef<ExperienceRef | null>(null)
@@ -1179,6 +1186,9 @@ export const HomeExperience = (props: { loader: Loader; preinitComplete: () => v
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
+    camera.current.aspect = window.innerWidth / window.innerHeight
+    camera.current.updateProjectionMatrix()
+
     // resize scenes
     particlesRef.current?.resize?.(window.innerWidth, window.innerHeight)
     dirtRef.current?.resize?.(window.innerWidth, window.innerHeight)
@@ -1247,16 +1257,22 @@ export const HomeExperience = (props: { loader: Loader; preinitComplete: () => v
       cameraPos = MathUtils.mixVec3(CameraPositions.about2.position, CameraPositions.contact.position, contactShowRatio)
       cameraRot = MathUtils.mixVec3(CameraPositions.about2.rotation, CameraPositions.contact.rotation, contactShowRatio)
     } else {
-      cameraPos = camera.position
-      cameraRot = camera.rotation
+      cameraPos = camera.current.position
+      cameraRot = camera.current.rotation
     }
 
     // set camera
-    camera.position.copy(cameraPos)
+    camera.current.position.copy(cameraPos)
 
     tempEuler.current.set(cameraRot.x, cameraRot.y, cameraRot.z)
-    camera.quaternion.setFromEuler(tempEuler.current)
+    camera.current.quaternion.setFromEuler(tempEuler.current)
   }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    scene: () => scene.current,
+    camera: () => camera.current,
+  }))
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
@@ -1299,18 +1315,24 @@ export const HomeExperience = (props: { loader: Loader; preinitComplete: () => v
 
   // setup camera
   useEffect(() => {
-    camera.position.copy(CameraPositions.contact.position)
-    camera.rotation.set(
+    camera.current.position.copy(CameraPositions.contact.position)
+    camera.current.rotation.set(
       CameraPositions.contact.rotation.x,
       CameraPositions.contact.rotation.y,
       CameraPositions.contact.rotation.z
     )
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  
+  useEffect(() => {
+    homeUI.current = document.getElementById(homeSectionId)
+    projectsUI.current = document.getElementById(projectsSectionId)
+    aboutUI.current = document.getElementById(aboutSectionId)
+    aboutIntroUI.current = document.getElementById(aboutIntroId)
+  }, [asPath])
+
   /* ---------------------------------- main ---------------------------------- */
-  return (
+  return createPortal(
     <>
       {/* scene */}
       <Particles ref={particlesRef} show={props.show} />
@@ -1321,6 +1343,8 @@ export const HomeExperience = (props: { loader: Loader; preinitComplete: () => v
 
       <fog args={[0x000000, 15, 25]} attach="fog" />
       <color attach="background" args={[0x000000]} />
-    </>
+    </>,
+    scene.current
   )
-}
+})
+HomeExperience.displayName = "HomeExperience"

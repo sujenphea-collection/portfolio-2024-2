@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
 import { AppProps } from "next/app"
 import Head from "next/head"
@@ -9,7 +9,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
-import { HomeExperience } from "../src/experience/home/HomeExperience"
+import { HomeExperience } from "../src/experience/home/HomeScene"
 import { Pass } from "../src/experience/Pass"
 import { SceneHandle } from "../src/experience/types/SceneHandle"
 import { AboutTransition } from "../src/passes/aboutTransition/aboutTransition"
@@ -94,7 +94,6 @@ const Setup = (props: { onEngineSetup: () => void }) => {
 }
 
 const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show: boolean }) => {
-  const { camera } = useThree()
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
@@ -103,7 +102,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   // scenes
   const aboutSceneRef = useRef<SceneHandle | null>(null)
-  const homeScene = useRef(new Scene())
+  const homeSceneRef = useRef<SceneHandle | null>(null)
 
   // passes
   const aboutTransitionPass = useRef(new AboutTransition())
@@ -184,8 +183,8 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     }
 
     aboutTransitionPass.current.reverse = true
-    aboutTransitionPass.current.toRenderScene = homeScene.current
-    aboutTransitionPass.current.toRenderCamera = camera
+    aboutTransitionPass.current.toRenderScene = homeSceneRef.current?.scene()
+    aboutTransitionPass.current.toRenderCamera = homeSceneRef.current?.camera()
     passQueue.current.push(aboutTransitionPass.current)
 
     gsap
@@ -197,8 +196,8 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         onComplete: () => {
           // update renders
           currRender.current = {
-            scene: homeScene.current,
-            camera,
+            scene: homeSceneRef.current?.scene(),
+            camera: homeSceneRef.current?.camera(),
           }
 
           // update routes to update
@@ -213,7 +212,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         },
       })
       .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
-  }, [camera])
+  }, [])
 
   const onRouteUpdated = () => {
     if (asPath === "/about") {
@@ -241,7 +240,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     if (sortedQueue.length > 0) {
       // render current scene
-      gl.setRenderTarget(fromRenderTarget.current)
+      gl.setRenderTarget(null)
       gl.render(currRender.current.scene, currRender.current.camera)
 
       // use texture in pass
@@ -274,10 +273,8 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   /* --------------------------------- effects -------------------------------- */
   // setup initial scene
   useEffect(() => {
-    currRender.current.scene = homeScene.current
-    currRender.current.camera = camera
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    currRender.current.scene = homeSceneRef.current?.scene()
+    currRender.current.camera = homeSceneRef.current?.camera()
   }, [])
 
   // setup transition passes
@@ -315,11 +312,12 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   return (
     <>
       <AboutScene ref={aboutSceneRef} />
-
-      {createPortal(
-        <HomeExperience loader={props.loader} preinitComplete={props.preinitComplete} show={props.show} />,
-        homeScene.current
-      )}
+      <HomeExperience
+        ref={homeSceneRef}
+        loader={props.loader}
+        preinitComplete={props.preinitComplete}
+        show={props.show}
+      />
     </>
   )
 }
