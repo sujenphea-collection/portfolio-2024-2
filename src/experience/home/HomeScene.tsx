@@ -1,3 +1,4 @@
+import { useCamera } from "@react-three/drei"
 import { createPortal, useFrame } from "@react-three/fiber"
 import { Quad } from "gsap"
 import { useRouter } from "next/router"
@@ -15,6 +16,7 @@ import {
   HalfFloatType,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  Intersection,
   LinearFilter,
   Matrix4,
   Mesh,
@@ -23,6 +25,7 @@ import {
   PerspectiveCamera,
   Plane,
   PlaneGeometry,
+  Raycaster,
   RepeatWrapping,
   RGBAFormat,
   Scene,
@@ -75,7 +78,9 @@ type ExperienceRef = {
   update?: (delta: number) => void
 }
 
-type ExperienceProps = { loader: Loader; preinitComplete: () => void; show: boolean }
+// eslint-disable-next-line react/no-unused-prop-types
+type ExperienceProps = { show: boolean; raycast: (_: Raycaster, intersects: Intersection[]) => void }
+type HomeExperienceProps = { loader: Loader; preinitComplete: () => void; show: boolean }
 
 /* -------------------------------------------------------------------------- */
 /*                                  constants                                 */
@@ -110,7 +115,7 @@ const CameraPositions = {
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
 /* -------------------------------------------------------------------------- */
-const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
   const particlesUniforms = useRef({
@@ -191,7 +196,7 @@ const Particles = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Particles.displayName = "Particles"
 
-const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   // scene
   const dirtMeshRef = useRef<Mesh<InstancedBufferGeometry, ShaderMaterial> | null>(null)
@@ -346,6 +351,7 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
         <mesh
           ref={dirtMeshRef}
           renderOrder={10}
+          raycast={props.raycast}
           onPointerMove={(ev) => {
             mouseParams.current.x = ev.uv?.x ?? 0
             mouseParams.current.y = 1 - (ev.uv?.y ?? 0)
@@ -379,7 +385,7 @@ const Dirt = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Dirt.displayName = "Dirt"
 
-const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   // load
   const floorBakedTexture = useRef<Texture | null>(null)
@@ -625,7 +631,7 @@ const Ground = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Ground.displayName = "Ground"
 
-const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
@@ -937,6 +943,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           position={[0, 1, -3.2]}
           scale={[3.7, 2.12, 1]}
           visible={false}
+          raycast={props.raycast}
           onPointerMove={(ev) => {
             mouse.current.x = ((ev.uv?.x ?? 0.5) - 0.5) * 2 // between -1 and 1
             mouse.current.y = ((ev.uv?.y ?? 0.5) - 0.5) * 2 // between -1 and 1
@@ -956,7 +963,7 @@ const Stage = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 })
 Stage.displayName = "Stage"
 
-const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
+const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
@@ -1144,6 +1151,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           <mesh
             scale={[0.4, 0.4, 1]}
             visible={false}
+            raycast={props.raycast}
             onPointerEnter={() => {
               document.body.style.cursor = "pointer"
             }}
@@ -1172,6 +1180,7 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
           <mesh
             scale={[0.45, 0.45, 1]}
             visible={false}
+            raycast={props.raycast}
             onPointerEnter={() => {
               document.body.style.cursor = "pointer"
             }}
@@ -1192,12 +1201,13 @@ const Contact = forwardRef<ExperienceRef, { show: boolean }>((props, ref) => {
 Contact.displayName = "Contact"
 
 // eslint-disable-next-line react/no-unused-prop-types
-export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, ref) => {
+export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
   const scene = useRef(new Scene())
   const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
+  const raycast = useCamera(camera.current)
 
   // scene
   const particlesRef = useRef<ExperienceRef | null>(null)
@@ -1370,11 +1380,11 @@ export const HomeExperience = forwardRef<SceneHandle, ExperienceProps>((props, r
   return createPortal(
     <>
       {/* scene */}
-      <Particles ref={particlesRef} show={props.show} />
-      <Dirt ref={dirtRef} show={props.show} />
-      <Ground ref={groundRef} show={props.show} />
-      <Stage ref={stageRef} show={props.show} />
-      <Contact ref={contactRef} show={props.show} />
+      <Particles ref={particlesRef} show={props.show} raycast={raycast} />
+      <Dirt ref={dirtRef} show={props.show} raycast={raycast} />
+      <Ground ref={groundRef} show={props.show} raycast={raycast} />
+      <Stage ref={stageRef} show={props.show} raycast={raycast} />
+      <Contact ref={contactRef} show={props.show} raycast={raycast} />
 
       <fog args={[0x000000, 15, 25]} attach="fog" />
       <color attach="background" args={[0x000000]} />
