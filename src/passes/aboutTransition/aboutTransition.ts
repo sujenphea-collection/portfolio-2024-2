@@ -25,7 +25,6 @@ export class AboutTransition extends Pass {
         u_progress: { value: 0 },
         u_time: Properties.globalUniforms.u_time,
       },
-
       fragmentShader,
     })
   }

@@ -171,9 +171,9 @@ const SceneRender = () => {
   const sceneOneRef = useRef<SceneHandle | null>(null)
   const sceneTwoRef = useRef<SceneHandle | null>(null)
 
-  // transition passes
+  // passes
   const aboutTransitionPass = useRef(new AboutTransition())
-  const queue = useRef<Pass[]>([])
+  const passQueue = useRef<Pass[]>([])
 
   // render
   const currRender = useRef<{ scene?: Scene; camera?: Camera }>({})
@@ -201,7 +201,7 @@ const SceneRender = () => {
     aboutTransitionPass.current.reverse = false
     aboutTransitionPass.current.toRenderScene = sceneTwoRef.current?.scene()
     aboutTransitionPass.current.toRenderCamera = sceneTwoRef.current?.camera()
-    queue.current.push(aboutTransitionPass.current)
+    passQueue.current.push(aboutTransitionPass.current)
 
     gsap
       .timeline({
@@ -225,8 +225,8 @@ const SceneRender = () => {
           routesToUpdate.current.splice(routesToUpdate.current.indexOf(fromRoute), 1)
 
           // update passes
-          const passIndex = queue.current.indexOf(aboutTransitionPass.current)
-          queue.current.splice(passIndex, 1)
+          const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
+          passQueue.current.splice(passIndex, 1)
         },
         undefined,
         "+=0.1"
@@ -240,19 +240,24 @@ const SceneRender = () => {
       return
     }
 
-    if (queue.current.length > 0) {
+    if (passQueue.current.length > 0) {
       // render current scene
-      gl.setRenderTarget(sceneRenderTarget.current)
+      gl.setRenderTarget(fromRenderTarget.current)
       gl.render(currRender.current.scene, currRender.current.camera)
 
       // use texture in pass
-      queue.current[0].render(
-        sceneRenderTarget.current.texture,
-        toRenderTarget.current,
-        currRender.current.camera,
-        true,
-        true
-      )
+      passQueue.current.forEach((pass, i, arr) => {
+        pass.render(
+          fromRenderTarget.current.texture,
+          toRenderTarget.current,
+          currRender.current.camera!,
+          i === arr.length - 1
+        )
+
+        const temp = fromRenderTarget.current
+        fromRenderTarget.current = toRenderTarget.current
+        toRenderTarget.current = temp
+      })
     } else {
       gl.setRenderTarget(null)
       gl.render(currRender.current.scene, currRender.current.camera)
