@@ -76,6 +76,8 @@ type ExperienceRef = {
   loadItems: (loader: Loader) => void
   resize?: (width: number, height: number) => void
   update?: (delta: number) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: { opacity: number }
 }
 
 // eslint-disable-next-line react/no-unused-prop-types
@@ -122,9 +124,12 @@ const CameraPositions = {
 /* -------------------------------------------------------------------------- */
 const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
   const particlesUniforms = useRef({
     u_time: { value: 0 },
+    u_opacity: { value: 0 },
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -133,11 +138,13 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
-    particlesUniforms.current.u_time.value += delta
+    particlesUniforms.current.u_time.value += delta * params.current.opacity
+    particlesUniforms.current.u_opacity.value = params.current.opacity
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -203,10 +210,13 @@ Particles.displayName = "Particles"
 
 const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   // scene
   const dirtMeshRef = useRef<Mesh<InstancedBufferGeometry, ShaderMaterial> | null>(null)
   const dirtUniformsRef = useRef({
     u_time: { value: 0 },
+    u_opacity: { value: 1 },
 
     u_offsetTexture: { value: null as DataTexture | null },
   })
@@ -237,6 +247,7 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -356,6 +367,7 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
         <mesh
           ref={dirtMeshRef}
           renderOrder={10}
+          visible={params.current.opacity >= 1}
           raycast={props.raycast}
           onPointerMove={(ev) => {
             mouseParams.current.x = ev.uv?.x ?? 0
@@ -424,6 +436,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
     u_scale: { value: 3.0 },
+    u_opacity: { value: 1 },
 
     u_shadowShowRatio: { value: 1 },
 
@@ -614,6 +627,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     resize: () => {
       renderTarget.current.setSize(window.innerWidth, window.innerHeight)
     },
+    uniforms: groundUniforms.current,
   }))
 
   /* ---------------------------------- main ---------------------------------- */
@@ -640,6 +654,8 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
@@ -811,6 +827,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -972,6 +989,14 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({
+    opacity: 1,
+    xLogoRandX: randFloat(0.2, 0.8),
+    xLogoRandY: randFloat(0.2, 0.8),
+    githubLogoRandX: randFloat(0.2, 0.8),
+    githubLogoRandY: randFloat(0.2, 0.8),
+  })
+
   // load
   const xLogoGeometryRef = useRef<BufferGeometry>()
   const githubLogoGeometryRef = useRef<BufferGeometry>()
@@ -991,13 +1016,6 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   // brownian
   const brownianMotion = useRef(new BrownianMotion())
   const tempVec3 = useRef(new Vector3())
-
-  const params = useRef({
-    xLogoRandX: randFloat(0.2, 0.8),
-    xLogoRandY: randFloat(0.2, 0.8),
-    githubLogoRandX: randFloat(0.2, 0.8),
-    githubLogoRandY: randFloat(0.2, 0.8),
-  })
 
   // ui
   const contactUI = useRef(document.getElementById(contactSectionId))
@@ -1121,6 +1139,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   useImperativeHandle(ref, () => ({
     loadItems,
     update,
+    params: params.current,
   }))
 
   /* --------------------------------- effects -------------------------------- */
@@ -1323,6 +1342,10 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   const introIn = () => {
     gsap
       .timeline({
+        onStart: () => {
+          if (dirtRef.current) dirtRef.current.params.opacity = 0
+          if (particlesRef.current) particlesRef.current.params.opacity = 0
+        },
         onComplete: () => {
           introComplete.current = true
           needsIntro.current = false
@@ -1332,7 +1355,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         x: CameraPositions.home.position.x,
         y: CameraPositions.home.position.y,
         z: CameraPositions.home.position.z,
-        duration: 1,
+        duration: 1.5,
         ease: "power3.inOut",
       })
       .to(
@@ -1341,10 +1364,15 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           x: CameraPositions.home.rotation.x,
           y: CameraPositions.home.rotation.y,
           z: CameraPositions.home.rotation.z,
-          duration: 1,
+          duration: 1.5,
           ease: "power3.inOut",
         },
         "<"
+      )
+      .fromTo(
+        [dirtRef.current?.params, particlesRef.current?.params],
+        { opacity: 0 },
+        { opacity: 1, duration: 2, ease: "power1.inOut" }
       )
   }
 
