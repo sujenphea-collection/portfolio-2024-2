@@ -1306,6 +1306,20 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     camera.current.quaternion.setFromEuler(tempEuler.current)
   }
 
+  const reset = () => {
+    camera.current.position.copy(CameraPositions.intro.position)
+    camera.current.rotation.set(
+      CameraPositions.intro.rotation.x,
+      CameraPositions.intro.rotation.y,
+      CameraPositions.intro.rotation.z
+    )
+
+    if (dirtRef.current) dirtRef.current.params.opacity = 0
+    if (particlesRef.current) particlesRef.current.params.opacity = 0
+    if (groundRef.current) groundRef.current.params.opacity = 0
+    if (stageRef.current) stageRef.current.params.opacity = 0
+  }
+
   const introIn = () => {
     gsap
       .timeline({
@@ -1408,12 +1422,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       needsIntro.current = true
       introComplete.current = false
 
-      camera.current.position.copy(CameraPositions.intro.position)
-      camera.current.rotation.set(
-        CameraPositions.intro.rotation.x,
-        CameraPositions.intro.rotation.y,
-        CameraPositions.intro.rotation.z
-      )
+      reset()
     }
 
     homeUI.current = document.getElementById(homeSectionId)
