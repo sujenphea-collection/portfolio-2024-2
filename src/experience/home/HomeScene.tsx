@@ -404,7 +404,7 @@ Dirt.displayName = "Dirt"
 
 const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
-  const params = useRef({ opacity: 0 })
+  const params = useRef({ opacity: 1 })
 
   // load
   const floorBakedTexture = useRef<Texture | null>(null)
@@ -438,14 +438,17 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
     u_scale: { value: 3.0 },
-    u_opacity: { value: 1 },
-
     u_shadowShowRatio: { value: 1 },
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
+  })
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {
+    groundUniforms.current.u_shadowShowRatio.value = params.current.opacity
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -1339,6 +1342,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         onStart: () => {
           if (dirtRef.current) dirtRef.current.params.opacity = 0
           if (particlesRef.current) particlesRef.current.params.opacity = 0
+          if (groundRef.current) groundRef.current.params.opacity = 0
           if (stageRef.current) stageRef.current.params.opacity = 0
         },
         onComplete: () => {
@@ -1369,6 +1373,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         },
         "<"
       )
+      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
       .fromTo(
         [dirtRef.current?.params, particlesRef.current?.params],
         { opacity: 0 },
