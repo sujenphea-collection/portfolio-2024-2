@@ -119,6 +119,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   // params
   const transitioning = useRef(false)
   const needsTransition = useRef(false)
+  const introIn = useRef(false)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -207,6 +208,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
           // post update
           transitioning.current = false
+          introIn.current = true
         },
       })
       .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
@@ -297,6 +299,8 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   // transition
   useEffect(() => {
+    introIn.current = false
+
     if (transitioning.current) {
       needsTransition.current = true
       return
@@ -305,6 +309,13 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     onRouteUpdated()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asPath])
+
+  // initial intro in
+  useEffect(() => {
+    if (props.show) {
+      introIn.current = true
+    }
+  }, [props.show])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -315,6 +326,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         loader={props.loader}
         preinitComplete={props.preinitComplete}
         show={props.show}
+        introIn={introIn}
       />
     </>
   )

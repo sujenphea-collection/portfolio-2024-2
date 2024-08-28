@@ -1,8 +1,8 @@
 import { useCamera } from "@react-three/drei"
 import { createPortal, useFrame } from "@react-three/fiber"
-import { Quad } from "gsap"
+import gsap, { Quad } from "gsap"
 import { useRouter } from "next/router"
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
+import { forwardRef, MutableRefObject, useEffect, useImperativeHandle, useRef } from "react"
 import {
   AddEquation,
   AdditiveBlending,
@@ -80,7 +80,12 @@ type ExperienceRef = {
 
 // eslint-disable-next-line react/no-unused-prop-types
 type ExperienceProps = { show: boolean; raycast: (_: Raycaster, intersects: Intersection[]) => void }
-type HomeExperienceProps = { loader: Loader; preinitComplete: () => void; show: boolean }
+type HomeExperienceProps = {
+  loader: Loader
+  preinitComplete: () => void
+  show: boolean
+  introIn: MutableRefObject<boolean>
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  constants                                 */
@@ -1218,6 +1223,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
   // params
   const tempEuler = useRef(new Euler())
+  const introComplete = useRef(false)
+  const needsIntro = useRef(true)
 
   // ui
   const homeUI = useRef(document.getElementById(homeSectionId))
@@ -1239,7 +1246,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   }
 
   const updateCamera = () => {
-    if (asPath !== "/") {
+    if (asPath !== "/" || !introComplete.current) {
       return
     }
 
@@ -1313,6 +1320,34 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     camera.current.quaternion.setFromEuler(tempEuler.current)
   }
 
+  const introIn = () => {
+    gsap
+      .timeline({
+        onComplete: () => {
+          introComplete.current = true
+          needsIntro.current = false
+        },
+      })
+      .to(camera.current.position, {
+        x: CameraPositions.home.position.x,
+        y: CameraPositions.home.position.y,
+        z: CameraPositions.home.position.z,
+        duration: 1,
+        ease: "power3.inOut",
+      })
+      .to(
+        camera.current.rotation,
+        {
+          x: CameraPositions.home.rotation.x,
+          y: CameraPositions.home.rotation.y,
+          z: CameraPositions.home.rotation.z,
+          duration: 1,
+          ease: "power3.inOut",
+        },
+        "<"
+      )
+  }
+
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     scene: () => scene.current,
@@ -1321,6 +1356,11 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
+    if (needsIntro.current && props.introIn.current) {
+      introIn()
+      needsIntro.current = false
+    }
+
     updateCamera()
 
     // update scene
@@ -1358,18 +1398,20 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     }
   }, [])
 
-  // setup camera
-  useEffect(() => {
-    camera.current.position.copy(CameraPositions.contact.position)
-    camera.current.rotation.set(
-      CameraPositions.contact.rotation.x,
-      CameraPositions.contact.rotation.y,
-      CameraPositions.contact.rotation.z
-    )
-  }, [])
-
   // update UI
   useEffect(() => {
+    if (asPath === "/") {
+      needsIntro.current = true
+      introComplete.current = false
+
+      camera.current.position.copy(CameraPositions.intro.position)
+      camera.current.rotation.set(
+        CameraPositions.intro.rotation.x,
+        CameraPositions.intro.rotation.y,
+        CameraPositions.intro.rotation.z
+      )
+    }
+
     homeUI.current = document.getElementById(homeSectionId)
     projectsUI.current = document.getElementById(projectsSectionId)
     aboutUI.current = document.getElementById(aboutSectionId)
