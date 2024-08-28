@@ -404,6 +404,8 @@ Dirt.displayName = "Dirt"
 
 const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 0 })
+
   // load
   const floorBakedTexture = useRef<Texture | null>(null)
 
@@ -627,7 +629,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     resize: () => {
       renderTarget.current.setSize(window.innerWidth, window.innerHeight)
     },
-    uniforms: groundUniforms.current,
+    params: params.current,
   }))
 
   /* ---------------------------------- main ---------------------------------- */
