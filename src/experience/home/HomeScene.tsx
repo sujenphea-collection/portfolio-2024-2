@@ -105,14 +105,6 @@ const CameraPositions = {
     position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
     rotation: { x: 0, y: 0, z: 0 },
   },
-  about: {
-    position: { x: -0.018808307775197538, y: 0.4989437981795135, z: 2.0269110132599835 },
-    rotation: { x: -0.09303697822124293, y: -0.0059999620528716794, z: -0.0005598311410729142 },
-  },
-  about2: {
-    position: { x: -1.0542873929824532, y: 0.5226093590653846, z: 1.7595346290785845 },
-    rotation: { x: -0.1832165381986701, y: -0.8497477741541486, z: -0.13828896837219806 },
-  },
   contact: {
     position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 0.3801748125186579 },
     rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
@@ -929,7 +921,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
           />
         </mesh>
 
-        <mesh position={[0, 0.1, 0]} geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
+        <mesh geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
           <shaderMaterial
             uniforms={floorUniforms.current}
             vertexShader={stageVert}
@@ -1268,8 +1260,6 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const projectsBounds = projectsUI.current?.getBoundingClientRect()
-    const aboutBounds = aboutUI.current?.getBoundingClientRect()
-    const aboutIntroBounds = aboutIntroUI.current?.getBoundingClientRect()
 
     // home
     const homeTop = homeBounds?.top ?? 0
@@ -1284,22 +1274,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     const projectsActive = projectsTop <= Properties.viewportHeight && projectsBottom >= 0
     const projectsHideScreenOffset = -projectsBottom / Properties.viewportHeight
 
-    // about
-    const aboutShowRatio = MathUtils.fit(projectsHideScreenOffset, -1, 0, 0, 1)
-    const aboutTop = aboutBounds?.top ?? 0
-    const aboutBottom = aboutBounds?.bottom ?? 0
-    const aboutActive = aboutTop <= Properties.viewportHeight && aboutBottom >= 0
-    const aboutHideScreenOffset = -aboutBottom / Properties.viewportHeight
-
-    const aboutIntroTop = aboutIntroBounds?.top ?? 0
-    const aboutIntroBottom = aboutIntroBounds?.bottom ?? 0
-    const aboutIntroActive = aboutIntroTop <= Properties.viewportHeight && aboutIntroBottom >= 0
-    const aboutIntroHideScreenOffset = -aboutIntroBottom / Properties.viewportHeight
-
-    const aboutContentShowRatio = MathUtils.fit(aboutIntroHideScreenOffset, -1, 0, 0, 1)
-
     // contact
-    const contactShowRatio = MathUtils.fit(aboutHideScreenOffset, -1, 0, 0, 1)
+    const contactShowRatio = MathUtils.fit(projectsHideScreenOffset, -1, 0, 0, 1)
 
     // get camera
     let cameraPos: Vector3Like
@@ -1308,22 +1284,16 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       cameraPos = MathUtils.mixVec3(CameraPositions.home.position, CameraPositions.projects.position, projectsShowRatio)
       cameraRot = MathUtils.mixVec3(CameraPositions.home.rotation, CameraPositions.projects.rotation, projectsShowRatio)
     } else if (projectsActive) {
-      cameraPos = MathUtils.mixVec3(CameraPositions.projects.position, CameraPositions.about.position, aboutShowRatio)
-      cameraRot = MathUtils.mixVec3(CameraPositions.projects.rotation, CameraPositions.about.rotation, aboutShowRatio)
-    } else if (aboutActive && aboutIntroActive) {
       cameraPos = MathUtils.mixVec3(
-        CameraPositions.about.position,
-        CameraPositions.about2.position,
-        aboutContentShowRatio
+        CameraPositions.projects.position,
+        CameraPositions.contact.position,
+        contactShowRatio
       )
       cameraRot = MathUtils.mixVec3(
-        CameraPositions.about.rotation,
-        CameraPositions.about2.rotation,
-        aboutContentShowRatio
+        CameraPositions.projects.rotation,
+        CameraPositions.contact.rotation,
+        contactShowRatio
       )
-    } else if (aboutActive) {
-      cameraPos = MathUtils.mixVec3(CameraPositions.about2.position, CameraPositions.contact.position, contactShowRatio)
-      cameraRot = MathUtils.mixVec3(CameraPositions.about2.rotation, CameraPositions.contact.rotation, contactShowRatio)
     } else {
       cameraPos = camera.current.position
       cameraRot = camera.current.rotation
@@ -1377,7 +1347,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       .fromTo(
         [dirtRef.current?.params, particlesRef.current?.params],
         { opacity: 0 },
-        { opacity: 1, duration: 2, ease: "power1.inOut" }
+        { opacity: 1, duration: 2, ease: "power1.inOut" },
+        "<"
       )
   }
 
