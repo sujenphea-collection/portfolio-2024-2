@@ -842,19 +842,11 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       return
     }
 
-    const homeBounds = homeUI.current?.getBoundingClientRect()
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
-    // home
-    const homeTop = homeBounds?.top ?? 0
-    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
-
     // show ratio
-    // const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
-    // screenUniforms.current.u_showRatio.value = screenShowRatio
-
-    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
-    floorUniforms.current.u_showRatio.value = stageShowRatio
+    screenUniforms.current.u_showRatio.value = params.current.opacity
+    floorUniforms.current.u_showRatio.value = params.current.opacity + 0.2
 
     // mix ratio
     let ratio = 0
@@ -1347,19 +1339,25 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         onStart: () => {
           if (dirtRef.current) dirtRef.current.params.opacity = 0
           if (particlesRef.current) particlesRef.current.params.opacity = 0
+          if (stageRef.current) stageRef.current.params.opacity = 0
         },
         onComplete: () => {
           introComplete.current = true
           needsIntro.current = false
         },
       })
-      .to(camera.current.position, {
-        x: CameraPositions.home.position.x,
-        y: CameraPositions.home.position.y,
-        z: CameraPositions.home.position.z,
-        duration: 1.5,
-        ease: "power3.inOut",
-      })
+      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 3, ease: "power1.in" })
+      .to(
+        camera.current.position,
+        {
+          x: CameraPositions.home.position.x,
+          y: CameraPositions.home.position.y,
+          z: CameraPositions.home.position.z,
+          duration: 1.5,
+          ease: "power3.inOut",
+        },
+        "<"
+      )
       .to(
         camera.current.rotation,
         {
