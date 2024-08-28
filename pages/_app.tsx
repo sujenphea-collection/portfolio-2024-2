@@ -457,6 +457,8 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
 const Layout = (props: { children: ReactNode }) => {
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
   const sectionsToPreinit = useRef(1)
   const loader = useRef<Loader>(null!)
@@ -518,7 +520,9 @@ const Layout = (props: { children: ReactNode }) => {
               className={cn(
                 "px-[1em]",
                 "whitespace-nowrap text-xs uppercase",
+                "select-none",
                 "opacity-50 group-hover:translate-x-[20px] group-hover:opacity-100",
+                asPath === nav.url && "translate-x-[20px] opacity-100",
                 "[transition:transform_500ms_cubic-bezier(0.25,1,0.26,1),opacity_500ms_cubic-bezier(0.25,1,0.26,1)]"
               )}
               style={{
@@ -531,8 +535,10 @@ const Layout = (props: { children: ReactNode }) => {
             <div
               className={cn(
                 "h-px w-[80px] bg-[#efefef]",
-                "group-hover:scale-x-50",
-                "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1)]"
+                "select-none",
+                "opacity-20 group-hover:scale-x-50 group-hover:opacity-100",
+                asPath === nav.url && "scale-x-50 opacity-100",
+                "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1),opacity_400ms_cubic-bezier(0.67,0,0.57,1)]"
               )}
             />
           </Link>
