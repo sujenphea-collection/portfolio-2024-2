@@ -164,7 +164,7 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       instancePositions[i3 + 2] = randFloat(-4, 10)
 
       instanceRands[i] = randFloat(0, 5)
-      instanceOpacity[i] = randFloat(0.4, 1.0)
+      instanceOpacity[i] = randFloat(0.2, 0.6)
       instanceScale[i] = randFloat(0.6, 1.0)
     }
 
