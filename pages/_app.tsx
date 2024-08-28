@@ -142,7 +142,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     gsap
       .timeline({
-        defaults: { duration: 3, ease: "expo.inOut" },
+        defaults: { duration: 2, ease: "power1.inOut" },
         onStart: () => {
           transitioning.current = true
         },
@@ -188,7 +188,6 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     gsap
       .timeline({
-        defaults: { duration: 3, ease: "expo.inOut" },
         onStart: () => {
           transitioning.current = true
         },
@@ -211,7 +210,12 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
           introIn.current = true
         },
       })
-      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
+      .fromTo(
+        aboutTransitionPass.current.material.uniforms.u_progress,
+        { value: 1 },
+        { value: 0, duration: 1.5, ease: "power1.inOut" },
+        "<"
+      )
   }, [])
 
   const onRouteUpdated = () => {
