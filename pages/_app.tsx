@@ -8,6 +8,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
 import { HomeExperience } from "../src/experience/home/HomeScene"
@@ -404,7 +405,7 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} className={cn("z-[1]", "fixed inset-0", "bg-white")}>
+    <div ref={containerRef} className={cn("z-[2]", "fixed inset-0", "bg-white")}>
       {/* bg */}
       <div
         className={cn("absolute inset-0", "pointer-events-none select-none")}
@@ -509,9 +510,33 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* navigation */}
-      <div className={cn("fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col gap-2")}>
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
+      <div className={cn("z-[1]", "fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col")}>
+        {Navigations.map((nav, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <Link href={nav.url} key={i} className={cn("w-[180px] py-2", "flex items-center justify-end", "group")}>
+            <p
+              className={cn(
+                "px-[1em]",
+                "whitespace-nowrap text-xs uppercase",
+                "opacity-50 group-hover:translate-x-[20px] group-hover:opacity-100",
+                "[transition:transform_500ms_cubic-bezier(0.25,1,0.26,1),opacity_500ms_cubic-bezier(0.25,1,0.26,1)]"
+              )}
+              style={{
+                textShadow: "0 0 5px rgba(150,150,150,0.8)",
+              }}
+            >
+              {nav.label}
+            </p>
+
+            <div
+              className={cn(
+                "h-px w-[80px] bg-[#efefef]",
+                "group-hover:scale-x-50",
+                "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1)]"
+              )}
+            />
+          </Link>
+        ))}
       </div>
 
       {/* main */}

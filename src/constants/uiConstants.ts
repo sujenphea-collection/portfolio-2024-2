@@ -15,3 +15,9 @@ export const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 // url
 export const xURL = "https://x.com"
 export const githubURL = "https://github.com"
+
+// navigations
+export const Navigations = [
+  { url: "/", label: "Home" },
+  { url: "/about", label: "About" },
+]
