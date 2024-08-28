@@ -1,13 +1,13 @@
 import {
+  Texture as _Texture,
   ClampToEdgeWrapping,
   LinearFilter,
   SRGBColorSpace,
-  Texture as _Texture,
   TextureLoader,
   VideoTexture,
   WebGLRenderer,
 } from "three"
-import { DRACOLoader, GLTFLoader, KTX2Loader, OBJLoader } from "three-stdlib"
+import { DRACOLoader, FontLoader, GLTFLoader, KTX2Loader, OBJLoader } from "three-stdlib"
 
 export enum ItemType {
   Texture,
@@ -18,6 +18,7 @@ export enum ItemType {
   Gltf,
   Image,
   Video,
+  Font,
 }
 
 type Item = {
@@ -50,6 +51,8 @@ export class Loader {
   gltfLoader = new GLTFLoader()
 
   objLoader = new OBJLoader()
+
+  fontLoader = new FontLoader()
 
   mediaContainer: HTMLDivElement
 
@@ -268,6 +271,15 @@ export class Loader {
       })
   }
 
+  loadFont(item: Item) {
+    this.fontLoader.load(item.url, (font) => {
+      // eslint-disable-next-line no-param-reassign
+      item.content = font
+
+      this.onItemLoad(item)
+    })
+  }
+
   /* --------------------------------- static --------------------------------- */
   static loadTexture(url: string, options?: { flipY?: boolean; onLoad?: (texture: _Texture) => void }) {
     const texture = this.textureLoader.load(url, (tex) => {
@@ -325,6 +337,10 @@ export class Loader {
       case ItemType.Video:
         this.loadVideo(item)
         break
+      case ItemType.Font:
+        this.loadFont(item)
+        break
+
       default:
         break
     }
