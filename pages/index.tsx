@@ -15,17 +15,7 @@ export default function Home() {
       {/* content */}
       <div className="relative">
         {/* home */}
-        <div id={homeSectionId} className="pb-[150vh]">
-          <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
-            {/* title */}
-            <h2 className={cn("mb-[1.5rem]", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
-              Home
-            </h2>
-
-            {/* description */}
-            <h4 className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem]")}>Description</h4>
-          </div>
-        </div>
+        <div id={homeSectionId} className="pb-[100vh]" />
 
         {/* projects */}
         <div id={projectsSectionId}>

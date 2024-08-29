@@ -1,6 +1,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
+import { Provider, useAtom } from "jotai"
 import { AppProps } from "next/app"
 import { Nunito } from "next/font/google"
 import Head from "next/head"
@@ -8,6 +9,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { animateInSceneAtom, animateIntroAtom } from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
@@ -120,6 +122,10 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   const transitioning = useRef(false)
   const needsTransition = useRef(false)
   const introIn = useRef(false)
+
+  /* ---------------------------------- atom ---------------------------------- */
+  const [, setAnimateIntro] = useAtom(animateIntroAtom)
+  const [animateInScene] = useAtom(animateInSceneAtom)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -326,12 +332,21 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asPath])
 
-  // initial intro in
+  // initial UI intro
   useEffect(() => {
     if (props.show) {
+      setAnimateIntro(true)
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.show])
+
+  // post UI intro - animate in scene
+  useEffect(() => {
+    if (animateInScene) {
       introIn.current = true
     }
-  }, [props.show])
+  }, [animateInScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -491,6 +506,10 @@ const Layout = (props: { children: ReactNode }) => {
   const sectionsToPreinit = useRef(1)
   const loader = useRef<Loader>(null!)
 
+  /* ---------------------------------- atoms --------------------------------- */
+  const [animateIntro] = useAtom(animateIntroAtom)
+  const [, setAnimateInScene] = useAtom(animateInSceneAtom)
+
   /* --------------------------------- states --------------------------------- */
   const [engineSetup, setEngineSetup] = useState(false)
 
@@ -511,6 +530,15 @@ const Layout = (props: { children: ReactNode }) => {
   useEffect(() => {
     loader.current = new Loader(Properties.gl)
   }, [])
+
+  // animate intro
+  useEffect(() => {
+    if (animateIntro) {
+      setTimeout(() => {
+        setAnimateInScene(true)
+      }, 1e3)
+    }
+  }, [animateIntro, setAnimateInScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -584,8 +612,10 @@ const Layout = (props: { children: ReactNode }) => {
 /* -------------------------------------------------------------------------- */
 export default function App(props: AppProps) {
   return (
-    <Layout>
-      <props.Component {...props.pageProps} />
-    </Layout>
+    <Provider>
+      <Layout>
+        <props.Component {...props.pageProps} />
+      </Layout>
+    </Provider>
   )
 }
