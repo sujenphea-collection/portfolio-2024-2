@@ -8,6 +8,7 @@ import Head from "next/head"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import SplitType from "split-type"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { animateInSceneAtom, animateIntroAtom } from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
@@ -34,6 +35,11 @@ export const nunitoFont = Nunito({
   variable: "--nunito",
   display: "swap",
 })
+
+/* -------------------------------------------------------------------------- */
+/*                                  constants                                 */
+/* -------------------------------------------------------------------------- */
+const headerTextId = "headerTextId"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -496,6 +502,141 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
   )
 }
 
+const Intro = () => {
+  /* ---------------------------------- refs ---------------------------------- */
+  // ui
+  const introTitleRef = useRef<HTMLDivElement | null>(null)
+  const introTitleShrinkRef = useRef<HTMLDivElement | null>(null)
+  const introDescRef = useRef<HTMLDivElement | null>(null)
+
+  const splittedTitleRef = useRef<SplitType | null>(null)
+  const splittedDescriptionRef = useRef<SplitType | null>(null)
+
+  // params
+  const titleTopOffset = useRef(0)
+
+  /* ---------------------------------- atoms --------------------------------- */
+  const [animateIntro] = useAtom(animateIntroAtom)
+  const [, setAnimateInScene] = useAtom(animateInSceneAtom)
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup text
+  useEffect(() => {
+    if (introTitleRef.current) {
+      splittedTitleRef.current?.revert()
+      splittedTitleRef.current = new SplitType(introTitleRef.current, { types: "words" })
+
+      // set position
+      ;(splittedTitleRef.current.words ?? []).forEach((word) => {
+        // eslint-disable-next-line no-param-reassign
+        word.style.transform = "translate3d(0, 100%, 0)"
+      })
+    }
+
+    if (introDescRef.current) {
+      splittedDescriptionRef.current?.revert()
+      splittedDescriptionRef.current = new SplitType(introDescRef.current, { types: "words" })
+
+      // set position
+      ;(splittedDescriptionRef.current.words ?? []).forEach((word) => {
+        // eslint-disable-next-line no-param-reassign
+        word.style.transform = "translate3d(0, -100%, 0)"
+      })
+    }
+  }, [])
+
+  // setup offsets
+  useEffect(() => {
+    // get variables
+    const titleRect = introTitleRef.current?.getBoundingClientRect()
+    const shrinkTitleRect = introTitleShrinkRef.current?.getBoundingClientRect()
+    const finalTitleRect = document.getElementById(headerTextId)?.getBoundingClientRect()
+
+    const titleHeight = titleRect?.height ?? 0
+    const titleTop = titleRect?.y ?? 0
+    const shrinkTitleHeight = shrinkTitleRect?.height ?? 0
+    const finalTitleTop = finalTitleRect?.top ?? 0
+
+    const heightOffset = titleHeight - shrinkTitleHeight
+    const topOffset = titleTop + heightOffset * 0.5
+    titleTopOffset.current = -topOffset + finalTitleTop
+  }, [])
+
+  // animate intro
+  useEffect(() => {
+    if (animateIntro) {
+      gsap
+        .timeline({})
+
+        // animate in
+        .to(splittedTitleRef.current?.words ?? [], { y: 0, stagger: 0.2, ease: "power1.inOut" })
+        .to(splittedDescriptionRef.current?.words ?? [], { y: 0, stagger: 0.1, ease: "power1.inOut" }, "<0.15")
+
+        // animate out
+        .to(
+          (splittedDescriptionRef.current?.words ?? []).slice(0, 2),
+          { x: "-100vw", duration: 1, ease: "power1.inOut" },
+          ">1"
+        )
+        .to(
+          (splittedDescriptionRef.current?.words ?? []).slice(2),
+          { x: "100vw", duration: 1, ease: "power1.inOut" },
+          "<"
+        )
+        .add(() => {
+          setAnimateInScene(true)
+        }, "<")
+        .to(
+          introTitleRef.current,
+          {
+            y: `${titleTopOffset.current}px`,
+            fontSize: "1rem",
+            color: "#aaa",
+            duration: 1,
+            ease: "power1.inOut",
+          },
+          "<"
+        )
+
+        // swap header + title text
+        .to(introTitleRef.current, { autoAlpha: 0, duration: 2 }, ">")
+        .to(`#${headerTextId}`, { autoAlpha: 1, duration: 2 }, "<")
+    }
+  }, [animateIntro, setAnimateInScene])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div className={cn("fixed inset-0", "min-h-[100vh]", "flex flex-col items-center justify-center")}>
+      {/* title */}
+      <div className="relative flex">
+        <h2
+          ref={introTitleRef}
+          className={cn("mb-[0]", "whitespace-pre font-heading text-[4.25rem] font-medium uppercase leading-[1]")}
+        >
+          <div className="overflow-hidden">Sujen Phea</div>
+        </h2>
+
+        {/* mock text */}
+        <div
+          ref={introTitleShrinkRef}
+          className={cn(
+            "invisible opacity-0",
+            "absolute bottom-0 left-1/2 -translate-x-1/2",
+            "whitespace-pre font-heading text-[1rem] font-medium uppercase leading-[1]"
+          )}
+        >
+          Sujen Phea
+        </div>
+      </div>
+
+      {/* description */}
+      <h4 ref={introDescRef} className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase")}>
+        <div className="overflow-y-hidden">Creative Web Developer</div>
+      </h4>
+    </div>
+  )
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
@@ -505,10 +646,6 @@ const Layout = (props: { children: ReactNode }) => {
   /* ---------------------------------- refs ---------------------------------- */
   const sectionsToPreinit = useRef(1)
   const loader = useRef<Loader>(null!)
-
-  /* ---------------------------------- atoms --------------------------------- */
-  const [animateIntro] = useAtom(animateIntroAtom)
-  const [, setAnimateInScene] = useAtom(animateInSceneAtom)
 
   /* --------------------------------- states --------------------------------- */
   const [engineSetup, setEngineSetup] = useState(false)
@@ -530,15 +667,6 @@ const Layout = (props: { children: ReactNode }) => {
   useEffect(() => {
     loader.current = new Loader(Properties.gl)
   }, [])
-
-  // animate intro
-  useEffect(() => {
-    if (animateIntro) {
-      setTimeout(() => {
-        setAnimateInScene(true)
-      }, 1e3)
-    }
-  }, [animateIntro, setAnimateInScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -563,8 +691,8 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* header */}
-      <div className="fixed left-1/2 top-8 -translate-x-1/2">
-        <div className="text-lg font-medium uppercase text-[#aaa]">Sujen Phea</div>
+      <div id={headerTextId} className={cn("opacity-0", "fixed left-1/2 top-8 -translate-x-1/2")}>
+        <div className="text-[1rem] font-medium uppercase leading-[1] text-[#aaa]">Sujen Phea</div>
       </div>
 
       {/* navigation */}
@@ -600,6 +728,9 @@ const Layout = (props: { children: ReactNode }) => {
           </Link>
         ))}
       </div>
+
+      {/* intro */}
+      <Intro />
 
       {/* main */}
       {engineSetup && <main className="pointer-events-none relative">{props.children}</main>}
