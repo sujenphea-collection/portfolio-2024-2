@@ -606,7 +606,14 @@ const Intro = () => {
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div className={cn("fixed inset-0", "min-h-[100vh]", "flex flex-col items-center justify-center")}>
+    <div
+      className={cn(
+        "fixed inset-0",
+        "min-h-[100vh]",
+        "flex flex-col items-center justify-center",
+        "pointer-events-none"
+      )}
+    >
       {/* title */}
       <div className="relative flex">
         <h2
