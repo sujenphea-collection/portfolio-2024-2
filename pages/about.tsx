@@ -1,6 +1,66 @@
+import gsap from "gsap"
+import { useAtom } from "jotai"
+import { useEffect, useRef } from "react"
+import SplitType from "split-type"
+import { animateInSceneAtom } from "../src/atoms/sceneAtoms"
 import { cn } from "../src/utils/utils"
 
 export default function About() {
+  /* ---------------------------------- refs ---------------------------------- */
+  const descriptionRef = useRef<HTMLDivElement | null>(null)
+  const splittedDescriptionRef = useRef<SplitType | null>(null)
+
+  /* ---------------------------------- atoms --------------------------------- */
+  const [animateIn] = useAtom(animateInSceneAtom)
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup text
+  useEffect(() => {
+    if (descriptionRef.current) {
+      splittedDescriptionRef.current?.revert()
+      splittedDescriptionRef.current = new SplitType(descriptionRef.current, { types: "lines,words" })
+
+      // set position
+      ;(splittedDescriptionRef.current.lines ?? []).forEach((line) => {
+        // eslint-disable-next-line no-param-reassign
+        line.style.overflow = "hidden"
+        // eslint-disable-next-line no-param-reassign
+        line.style.padding = "10px 0"
+      })
+      ;(splittedDescriptionRef.current.words ?? []).forEach((word) => {
+        // eslint-disable-next-line no-param-reassign
+        word.style.transform = "translate3d(0, 100%, 0)"
+        // eslint-disable-next-line no-param-reassign
+        word.style.opacity = "0"
+      })
+    }
+  }, [])
+
+  // animate
+  useEffect(() => {
+    if (!animateIn) {
+      return
+    }
+
+    gsap
+      .timeline({ delay: 0.4 })
+      .to(splittedDescriptionRef.current?.words ?? [], {
+        y: 0,
+        stagger: 0.03,
+        ease: "power1.inOut",
+      })
+      .to(
+        splittedDescriptionRef.current?.words ?? [],
+        {
+          opacity: 1,
+          stagger: 0.04,
+          ease: "power1.inOut",
+        },
+        "<0.1"
+      )
+  }, [animateIn])
+
+  /* ---------------------------------- main ---------------------------------- */
   return (
     <div className="relative">
       {/* screen 1 */}
@@ -20,9 +80,11 @@ export default function About() {
         >
           {/* description */}
           <h4
+            ref={descriptionRef}
             className={cn(
               "mb-[1.8rem] max-w-[40ch]",
-              "text-center text-[2.6rem] font-medium leading-[1.05] text-[#acacac] lg:text-[4rem]"
+              "text-center text-[2.6rem] font-medium leading-[1] text-[#acacac] lg:text-[4rem]",
+              "overflow-hidden"
             )}
           >
             I am a Creative Web Developer based in Auckland, New Zealand.
