@@ -987,6 +987,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     githubLogoRandX: randFloat(0.2, 0.8),
     githubLogoRandY: randFloat(0.2, 0.8),
   })
+  const pointerVisible = useRef(true)
 
   // load
   const xLogoGeometryRef = useRef<BufferGeometry>()
@@ -1041,6 +1042,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
   const update = (delta: number) => {
     if (asPath !== "/") {
+      pointerVisible.current = false
       return
     }
 
@@ -1049,6 +1051,8 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     // lerp
     const contactTop = contactBounds?.top ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    pointerVisible.current = contactShowScreenOffset > 2.3
 
     // - x
     let xRatio = MathUtils.fit(contactShowScreenOffset, 1.8, 2.1, 0, 1, Quad.easeInOut)
@@ -1124,6 +1128,11 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       githubLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.githubLogoRandX
       githubLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.githubLogoRandY
     }
+
+    // reset pointer
+    if (contactShowScreenOffset <= 2.3) {
+      document.body.style.cursor = "auto"
+    }
   }
 
   /* --------------------------------- handle --------------------------------- */
@@ -1168,13 +1177,19 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
             visible={false}
             raycast={props.raycast}
             onPointerEnter={() => {
-              document.body.style.cursor = "pointer"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "pointer"
+              }
             }}
             onClick={() => {
-              window.open(xURL, "_blank")
+              if (pointerVisible.current) {
+                window.open(xURL, "_blank")
+              }
             }}
             onPointerLeave={() => {
-              document.body.style.cursor = "auto"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "auto"
+              }
             }}
           >
             <planeGeometry />
@@ -1197,13 +1212,19 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
             visible={false}
             raycast={props.raycast}
             onPointerEnter={() => {
-              document.body.style.cursor = "pointer"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "pointer"
+              }
             }}
             onClick={() => {
-              window.open(githubURL, "_blank")
+              if (pointerVisible.current) {
+                window.open(githubURL, "_blank")
+              }
             }}
             onPointerLeave={() => {
-              document.body.style.cursor = "auto"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "auto"
+              }
             }}
           >
             <planeGeometry />
