@@ -83,7 +83,7 @@ export default function About() {
             ref={descriptionRef}
             className={cn(
               "mb-[1.8rem] max-w-[40ch]",
-              "text-center text-[2.6rem] font-medium leading-[1] text-[#acacac] lg:text-[4rem]",
+              "text-center text-[1.25rem] font-medium leading-[1] text-[#acacac]",
               "overflow-hidden"
             )}
           >
