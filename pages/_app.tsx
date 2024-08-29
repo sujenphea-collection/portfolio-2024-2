@@ -277,8 +277,20 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   /* --------------------------------- effects -------------------------------- */
   // setup initial scene
   useEffect(() => {
-    currRender.current.scene = homeSceneRef.current?.scene()
-    currRender.current.camera = homeSceneRef.current?.camera()
+    switch (asPath) {
+      case "/about":
+        currRender.current.scene = aboutSceneRef.current?.scene()
+        currRender.current.camera = aboutSceneRef.current?.camera()
+        break
+      case "/":
+        currRender.current.scene = homeSceneRef.current?.scene()
+        currRender.current.camera = homeSceneRef.current?.camera()
+        break
+      default:
+        break
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // setup transition passes

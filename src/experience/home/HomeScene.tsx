@@ -153,7 +153,7 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     })
     geometry.setIndex(refGeometry.index)
 
-    const instances = 1200
+    const instances = 400
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     const instanceOpacity = new Float32Array(instances * 1)
@@ -1233,7 +1233,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   // params
   const tempEuler = useRef(new Euler())
   const introComplete = useRef(false)
-  const needsIntro = useRef(true)
+  const needsIntro = useRef(false)
 
   // ui
   const homeUI = useRef(document.getElementById(homeSectionId))
