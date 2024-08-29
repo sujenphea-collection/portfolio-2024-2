@@ -246,6 +246,8 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   useFrame((_, delta) => {
     dirtUniformsRef.current.u_time.value += delta
 
+    if (dirtMeshRef.current) dirtMeshRef.current.visible = params.current.opacity >= 0.9
+
     // update position
     dirtMeshRef.current?.scale.setScalar(12)
 
@@ -359,7 +361,6 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
         <mesh
           ref={dirtMeshRef}
           renderOrder={10}
-          visible={params.current.opacity >= 1}
           raycast={props.raycast}
           onPointerMove={(ev) => {
             mouseParams.current.x = ev.uv?.x ?? 0
@@ -1357,13 +1358,13 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         },
         "<"
       )
-      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
       .fromTo(
-        [dirtRef.current?.params, particlesRef.current?.params],
+        [groundRef.current?.params, dirtRef.current?.params],
         { opacity: 0 },
-        { opacity: 1, duration: 2, ease: "power1.inOut" },
-        "<"
+        { opacity: 1, duration: 1, ease: "power1.inOut" },
+        ">-0.1"
       )
+      .fromTo([particlesRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.inOut" }, "<")
   }
 
   /* --------------------------------- handle --------------------------------- */
