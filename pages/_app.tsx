@@ -298,7 +298,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     aboutTransitionPass.current.init(aboutSceneRef.current?.scene(), aboutSceneRef.current?.camera())
 
     outputPass.current.init()
-    passQueue.current.push(outputPass.current)
+    // passQueue.current.push(outputPass.current)
   }, [])
 
   // resize
