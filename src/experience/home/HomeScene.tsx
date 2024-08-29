@@ -214,7 +214,7 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   })
 
   // constants
-  const DIRT_COUNT = useRef(32768)
+  const DIRT_COUNT = useRef(16384)
 
   // params
   const mouseDataTexture = useRef<DataTexture | null>(null)
@@ -249,7 +249,8 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     if (dirtMeshRef.current) dirtMeshRef.current.visible = params.current.opacity >= 0.9
 
     // update position
-    dirtMeshRef.current?.scale.setScalar(12)
+    dirtMeshRef.current?.position.setZ(-2)
+    dirtMeshRef.current?.scale.setScalar(8)
 
     // update mouse
     const data = mouseDataTexture.current?.image.data
@@ -1343,7 +1344,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           y: CameraPositions.home.position.y,
           z: CameraPositions.home.position.z,
           duration: 1.5,
-          ease: "power3.inOut",
+          ease: "power1.inOut",
         },
         "<"
       )
@@ -1354,16 +1355,12 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           y: CameraPositions.home.rotation.y,
           z: CameraPositions.home.rotation.z,
           duration: 1.5,
-          ease: "power3.inOut",
+          ease: "power1.inOut",
         },
         "<"
       )
-      .fromTo(
-        [groundRef.current?.params, dirtRef.current?.params],
-        { opacity: 0 },
-        { opacity: 1, duration: 1, ease: "power1.inOut" },
-        ">-0.1"
-      )
+      .set([dirtRef.current?.params], { opacity: 1 }, "<")
+      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
       .fromTo([particlesRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.inOut" }, "<")
   }
 
