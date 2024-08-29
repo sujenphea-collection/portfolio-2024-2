@@ -1,8 +1,8 @@
 import { useCamera } from "@react-three/drei"
 import { createPortal, useFrame } from "@react-three/fiber"
-import { Quad } from "gsap"
+import gsap, { Quad } from "gsap"
 import { useRouter } from "next/router"
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
+import { forwardRef, MutableRefObject, useEffect, useImperativeHandle, useRef } from "react"
 import {
   AddEquation,
   AdditiveBlending,
@@ -76,11 +76,18 @@ type ExperienceRef = {
   loadItems: (loader: Loader) => void
   resize?: (width: number, height: number) => void
   update?: (delta: number) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: { opacity: number }
 }
 
 // eslint-disable-next-line react/no-unused-prop-types
 type ExperienceProps = { show: boolean; raycast: (_: Raycaster, intersects: Intersection[]) => void }
-type HomeExperienceProps = { loader: Loader; preinitComplete: () => void; show: boolean }
+type HomeExperienceProps = {
+  loader: Loader
+  preinitComplete: () => void
+  show: boolean
+  introIn: MutableRefObject<boolean>
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  constants                                 */
@@ -98,14 +105,6 @@ const CameraPositions = {
     position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
     rotation: { x: 0, y: 0, z: 0 },
   },
-  about: {
-    position: { x: -0.018808307775197538, y: 0.4989437981795135, z: 2.0269110132599835 },
-    rotation: { x: -0.09303697822124293, y: -0.0059999620528716794, z: -0.0005598311410729142 },
-  },
-  about2: {
-    position: { x: -1.0542873929824532, y: 0.5226093590653846, z: 1.7595346290785845 },
-    rotation: { x: -0.1832165381986701, y: -0.8497477741541486, z: -0.13828896837219806 },
-  },
   contact: {
     position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 0.3801748125186579 },
     rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
@@ -117,9 +116,12 @@ const CameraPositions = {
 /* -------------------------------------------------------------------------- */
 const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   const particlesGeometryRef = useRef<InstancedBufferGeometry | null>(null)
   const particlesUniforms = useRef({
     u_time: { value: 0 },
+    u_opacity: { value: 0 },
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -128,11 +130,13 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
-    particlesUniforms.current.u_time.value += delta
+    particlesUniforms.current.u_time.value += delta * params.current.opacity
+    particlesUniforms.current.u_opacity.value = params.current.opacity
   })
 
   /* --------------------------------- effects -------------------------------- */
@@ -149,7 +153,7 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     })
     geometry.setIndex(refGeometry.index)
 
-    const instances = 1200
+    const instances = 400
     const instancePositions = new Float32Array(instances * 3)
     const instanceRands = new Float32Array(instances * 1)
     const instanceOpacity = new Float32Array(instances * 1)
@@ -160,7 +164,7 @@ const Particles = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       instancePositions[i3 + 2] = randFloat(-4, 10)
 
       instanceRands[i] = randFloat(0, 5)
-      instanceOpacity[i] = randFloat(0.4, 1.0)
+      instanceOpacity[i] = randFloat(0.2, 0.6)
       instanceScale[i] = randFloat(0.6, 1.0)
     }
 
@@ -198,16 +202,19 @@ Particles.displayName = "Particles"
 
 const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   // scene
   const dirtMeshRef = useRef<Mesh<InstancedBufferGeometry, ShaderMaterial> | null>(null)
   const dirtUniformsRef = useRef({
     u_time: { value: 0 },
+    u_opacity: { value: 1 },
 
     u_offsetTexture: { value: null as DataTexture | null },
   })
 
   // constants
-  const DIRT_COUNT = useRef(32768)
+  const DIRT_COUNT = useRef(16384)
 
   // params
   const mouseDataTexture = useRef<DataTexture | null>(null)
@@ -232,14 +239,18 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
     dirtUniformsRef.current.u_time.value += delta
 
+    if (dirtMeshRef.current) dirtMeshRef.current.visible = params.current.opacity >= 0.9
+
     // update position
-    dirtMeshRef.current?.scale.setScalar(12)
+    dirtMeshRef.current?.position.setZ(-2)
+    dirtMeshRef.current?.scale.setScalar(8)
 
     // update mouse
     const data = mouseDataTexture.current?.image.data
@@ -387,6 +398,8 @@ Dirt.displayName = "Dirt"
 
 const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   // load
   const floorBakedTexture = useRef<Texture | null>(null)
 
@@ -419,13 +432,17 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
     u_scale: { value: 3.0 },
-
     u_shadowShowRatio: { value: 1 },
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
 
     ...UniformsLib.fog,
+  })
+
+  /* ---------------------------------- tick ---------------------------------- */
+  useFrame(() => {
+    groundUniforms.current.u_shadowShowRatio.value = params.current.opacity
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -609,6 +626,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     resize: () => {
       renderTarget.current.setSize(window.innerWidth, window.innerHeight)
     },
+    params: params.current,
   }))
 
   /* ---------------------------------- main ---------------------------------- */
@@ -635,6 +653,8 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({ opacity: 1 })
+
   // scene
   const floorGeometryRef = useRef<BufferGeometry | null>(null)
   const floorBoxGeometryRef = useRef<BufferGeometry | null>(null)
@@ -806,6 +826,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
+    params: params.current,
   }))
 
   /* ---------------------------------- tick ---------------------------------- */
@@ -818,19 +839,11 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       return
     }
 
-    const homeBounds = homeUI.current?.getBoundingClientRect()
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
-    // home
-    const homeTop = homeBounds?.top ?? 0
-    const homeShowScreenOffset = (Properties.viewportHeight - homeTop) / Properties.viewportHeight
-
     // show ratio
-    // const screenShowRatio = MathUtils.fit(homeShowScreenOffset, 1.4, 2, 0, 1, easeInOut)
-    // screenUniforms.current.u_showRatio.value = screenShowRatio
-
-    const stageShowRatio = MathUtils.fit(homeShowScreenOffset, 1, 2, 0, 1)
-    floorUniforms.current.u_showRatio.value = stageShowRatio
+    screenUniforms.current.u_showRatio.value = params.current.opacity
+    floorUniforms.current.u_showRatio.value = params.current.opacity + 0.2
 
     // mix ratio
     let ratio = 0
@@ -910,7 +923,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
           />
         </mesh>
 
-        <mesh position={[0, 0.1, 0]} geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
+        <mesh geometry={floorBoxGeometryRef.current ?? undefined} userData={{ reflect: false }}>
           <shaderMaterial
             uniforms={floorUniforms.current}
             vertexShader={stageVert}
@@ -967,6 +980,15 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
   /* ---------------------------------- refs ---------------------------------- */
+  const params = useRef({
+    opacity: 1,
+    xLogoRandX: randFloat(0.2, 0.8),
+    xLogoRandY: randFloat(0.2, 0.8),
+    githubLogoRandX: randFloat(0.2, 0.8),
+    githubLogoRandY: randFloat(0.2, 0.8),
+  })
+  const pointerVisible = useRef(true)
+
   // load
   const xLogoGeometryRef = useRef<BufferGeometry>()
   const githubLogoGeometryRef = useRef<BufferGeometry>()
@@ -986,13 +1008,6 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   // brownian
   const brownianMotion = useRef(new BrownianMotion())
   const tempVec3 = useRef(new Vector3())
-
-  const params = useRef({
-    xLogoRandX: randFloat(0.2, 0.8),
-    xLogoRandY: randFloat(0.2, 0.8),
-    githubLogoRandX: randFloat(0.2, 0.8),
-    githubLogoRandY: randFloat(0.2, 0.8),
-  })
 
   // ui
   const contactUI = useRef(document.getElementById(contactSectionId))
@@ -1027,6 +1042,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
   const update = (delta: number) => {
     if (asPath !== "/") {
+      pointerVisible.current = false
       return
     }
 
@@ -1035,6 +1051,8 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     // lerp
     const contactTop = contactBounds?.top ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    pointerVisible.current = contactShowScreenOffset > 2.3
 
     // - x
     let xRatio = MathUtils.fit(contactShowScreenOffset, 1.8, 2.1, 0, 1, Quad.easeInOut)
@@ -1110,12 +1128,18 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       githubLogoMeshRef.current.rotation.x = -Input.mouseXY.y * 0.2 * params.current.githubLogoRandX
       githubLogoMeshRef.current.rotation.y = Input.mouseXY.x * 0.4 * params.current.githubLogoRandY
     }
+
+    // reset pointer
+    if (contactShowScreenOffset <= 2.3) {
+      document.body.style.cursor = "auto"
+    }
   }
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     loadItems,
     update,
+    params: params.current,
   }))
 
   /* --------------------------------- effects -------------------------------- */
@@ -1153,13 +1177,19 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
             visible={false}
             raycast={props.raycast}
             onPointerEnter={() => {
-              document.body.style.cursor = "pointer"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "pointer"
+              }
             }}
             onClick={() => {
-              window.open(xURL, "_blank")
+              if (pointerVisible.current) {
+                window.open(xURL, "_blank")
+              }
             }}
             onPointerLeave={() => {
-              document.body.style.cursor = "auto"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "auto"
+              }
             }}
           >
             <planeGeometry />
@@ -1182,13 +1212,19 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
             visible={false}
             raycast={props.raycast}
             onPointerEnter={() => {
-              document.body.style.cursor = "pointer"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "pointer"
+              }
             }}
             onClick={() => {
-              window.open(githubURL, "_blank")
+              if (pointerVisible.current) {
+                window.open(githubURL, "_blank")
+              }
             }}
             onPointerLeave={() => {
-              document.body.style.cursor = "auto"
+              if (pointerVisible.current) {
+                document.body.style.cursor = "auto"
+              }
             }}
           >
             <planeGeometry />
@@ -1218,6 +1254,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
   // params
   const tempEuler = useRef(new Euler())
+  const introComplete = useRef(false)
+  const needsIntro = useRef(false)
 
   // ui
   const homeUI = useRef(document.getElementById(homeSectionId))
@@ -1239,14 +1277,12 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   }
 
   const updateCamera = () => {
-    if (asPath !== "/") {
+    if (asPath !== "/" || !introComplete.current) {
       return
     }
 
     const homeBounds = homeUI.current?.getBoundingClientRect()
     const projectsBounds = projectsUI.current?.getBoundingClientRect()
-    const aboutBounds = aboutUI.current?.getBoundingClientRect()
-    const aboutIntroBounds = aboutIntroUI.current?.getBoundingClientRect()
 
     // home
     const homeTop = homeBounds?.top ?? 0
@@ -1261,22 +1297,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     const projectsActive = projectsTop <= Properties.viewportHeight && projectsBottom >= 0
     const projectsHideScreenOffset = -projectsBottom / Properties.viewportHeight
 
-    // about
-    const aboutShowRatio = MathUtils.fit(projectsHideScreenOffset, -1, 0, 0, 1)
-    const aboutTop = aboutBounds?.top ?? 0
-    const aboutBottom = aboutBounds?.bottom ?? 0
-    const aboutActive = aboutTop <= Properties.viewportHeight && aboutBottom >= 0
-    const aboutHideScreenOffset = -aboutBottom / Properties.viewportHeight
-
-    const aboutIntroTop = aboutIntroBounds?.top ?? 0
-    const aboutIntroBottom = aboutIntroBounds?.bottom ?? 0
-    const aboutIntroActive = aboutIntroTop <= Properties.viewportHeight && aboutIntroBottom >= 0
-    const aboutIntroHideScreenOffset = -aboutIntroBottom / Properties.viewportHeight
-
-    const aboutContentShowRatio = MathUtils.fit(aboutIntroHideScreenOffset, -1, 0, 0, 1)
-
     // contact
-    const contactShowRatio = MathUtils.fit(aboutHideScreenOffset, -1, 0, 0, 1)
+    const contactShowRatio = MathUtils.fit(projectsHideScreenOffset, -1, 0, 0, 1)
 
     // get camera
     let cameraPos: Vector3Like
@@ -1285,22 +1307,16 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       cameraPos = MathUtils.mixVec3(CameraPositions.home.position, CameraPositions.projects.position, projectsShowRatio)
       cameraRot = MathUtils.mixVec3(CameraPositions.home.rotation, CameraPositions.projects.rotation, projectsShowRatio)
     } else if (projectsActive) {
-      cameraPos = MathUtils.mixVec3(CameraPositions.projects.position, CameraPositions.about.position, aboutShowRatio)
-      cameraRot = MathUtils.mixVec3(CameraPositions.projects.rotation, CameraPositions.about.rotation, aboutShowRatio)
-    } else if (aboutActive && aboutIntroActive) {
       cameraPos = MathUtils.mixVec3(
-        CameraPositions.about.position,
-        CameraPositions.about2.position,
-        aboutContentShowRatio
+        CameraPositions.projects.position,
+        CameraPositions.contact.position,
+        contactShowRatio
       )
       cameraRot = MathUtils.mixVec3(
-        CameraPositions.about.rotation,
-        CameraPositions.about2.rotation,
-        aboutContentShowRatio
+        CameraPositions.projects.rotation,
+        CameraPositions.contact.rotation,
+        contactShowRatio
       )
-    } else if (aboutActive) {
-      cameraPos = MathUtils.mixVec3(CameraPositions.about2.position, CameraPositions.contact.position, contactShowRatio)
-      cameraRot = MathUtils.mixVec3(CameraPositions.about2.rotation, CameraPositions.contact.rotation, contactShowRatio)
     } else {
       cameraPos = camera.current.position
       cameraRot = camera.current.rotation
@@ -1313,6 +1329,62 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     camera.current.quaternion.setFromEuler(tempEuler.current)
   }
 
+  const reset = () => {
+    camera.current.position.copy(CameraPositions.intro.position)
+    camera.current.rotation.set(
+      CameraPositions.intro.rotation.x,
+      CameraPositions.intro.rotation.y,
+      CameraPositions.intro.rotation.z
+    )
+
+    if (dirtRef.current) dirtRef.current.params.opacity = 0
+    if (particlesRef.current) particlesRef.current.params.opacity = 0
+    if (groundRef.current) groundRef.current.params.opacity = 0
+    if (stageRef.current) stageRef.current.params.opacity = 0
+  }
+
+  const introIn = () => {
+    gsap
+      .timeline({
+        onStart: () => {
+          if (dirtRef.current) dirtRef.current.params.opacity = 0
+          if (particlesRef.current) particlesRef.current.params.opacity = 0
+          if (groundRef.current) groundRef.current.params.opacity = 0
+          if (stageRef.current) stageRef.current.params.opacity = 0
+        },
+        onComplete: () => {
+          introComplete.current = true
+          needsIntro.current = false
+        },
+      })
+      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 3, ease: "power1.in" })
+      .to(
+        camera.current.position,
+        {
+          x: CameraPositions.home.position.x,
+          y: CameraPositions.home.position.y,
+          z: CameraPositions.home.position.z,
+          duration: 1.5,
+          ease: "power1.inOut",
+        },
+        "<"
+      )
+      .to(
+        camera.current.rotation,
+        {
+          x: CameraPositions.home.rotation.x,
+          y: CameraPositions.home.rotation.y,
+          z: CameraPositions.home.rotation.z,
+          duration: 1.5,
+          ease: "power1.inOut",
+        },
+        "<"
+      )
+      .set([dirtRef.current?.params], { opacity: 1 }, "<")
+      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
+      .fromTo([particlesRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.inOut" }, "<")
+  }
+
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
     scene: () => scene.current,
@@ -1321,6 +1393,11 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
   /* ---------------------------------- tick ---------------------------------- */
   useFrame((_, delta) => {
+    if (needsIntro.current && props.introIn.current) {
+      introIn()
+      needsIntro.current = false
+    }
+
     updateCamera()
 
     // update scene
@@ -1358,18 +1435,15 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     }
   }, [])
 
-  // setup camera
-  useEffect(() => {
-    camera.current.position.copy(CameraPositions.contact.position)
-    camera.current.rotation.set(
-      CameraPositions.contact.rotation.x,
-      CameraPositions.contact.rotation.y,
-      CameraPositions.contact.rotation.z
-    )
-  }, [])
-
   // update UI
   useEffect(() => {
+    if (asPath === "/") {
+      needsIntro.current = true
+      introComplete.current = false
+
+      reset()
+    }
+
     homeUI.current = document.getElementById(homeSectionId)
     projectsUI.current = document.getElementById(projectsSectionId)
     aboutUI.current = document.getElementById(aboutSectionId)

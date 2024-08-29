@@ -9,7 +9,6 @@ uniform sampler2D u_maskTexture;
 uniform sampler2D u_mroTexture;
 
 uniform float u_scale; // scales uv for baked texture
-
 uniform float u_shadowShowRatio;
 
 varying vec4 v_uv;
@@ -58,7 +57,7 @@ void main() {
   float lightIntensity = 0.3;
   light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 20.0, 0.0, 0.0);
 
-  color += light;
+  color += light * (clamp(u_shadowShowRatio, 0.4, 1.0));
 
   // get reflection
   vec4 uvOffset = vec4(noise * 0.2, 0.0, 0.0, noise * 0.2);

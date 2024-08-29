@@ -1,3 +1,5 @@
+uniform float u_opacity;
+
 varying vec2 v_uv;
 varying vec3 v_pos;
 varying float v_opacity;
@@ -19,7 +21,9 @@ float circle(vec2 uv, float radius, float blur) {
 void main() {
   vec3 color = vec3(circle(v_uv, 0.9, 0.4));
 
-  float alpha = v_pos.y * v_opacity;
+  float yOffset = clamp(v_pos.z + 5.0, 0.0, 1.0);      // closer = disappear lower
+  float zAlphaOffset = clamp(v_pos.z + 5.0, 0.4, 1.0); // further = less visible
+  float alpha = (v_pos.y + yOffset) * zAlphaOffset * v_opacity * u_opacity;
 
   gl_FragColor = vec4(color, alpha);
 }

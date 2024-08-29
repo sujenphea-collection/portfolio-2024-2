@@ -1,13 +1,17 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import gsap from "gsap"
+import { Provider, useAtom } from "jotai"
 import { AppProps } from "next/app"
 import { Nunito } from "next/font/google"
 import Head from "next/head"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import SplitType from "split-type"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { animateInSceneAtom, animateIntroAtom } from "../src/atoms/sceneAtoms"
+import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
 import { HomeExperience } from "../src/experience/home/HomeScene"
@@ -31,6 +35,11 @@ export const nunitoFont = Nunito({
   variable: "--nunito",
   display: "swap",
 })
+
+/* -------------------------------------------------------------------------- */
+/*                                  constants                                 */
+/* -------------------------------------------------------------------------- */
+const headerTextId = "headerTextId"
 
 /* -------------------------------------------------------------------------- */
 /*                                 experience                                 */
@@ -118,6 +127,11 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   // params
   const transitioning = useRef(false)
   const needsTransition = useRef(false)
+  const introIn = useRef(false)
+
+  /* ---------------------------------- atom ---------------------------------- */
+  const [, setAnimateIntro] = useAtom(animateIntroAtom)
+  const [animateInScene] = useAtom(animateInSceneAtom)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -140,7 +154,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     gsap
       .timeline({
-        defaults: { duration: 3, ease: "expo.inOut" },
+        defaults: { duration: 2, ease: "power1.inOut" },
         onStart: () => {
           transitioning.current = true
         },
@@ -186,7 +200,6 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
     gsap
       .timeline({
-        defaults: { duration: 3, ease: "expo.inOut" },
         onStart: () => {
           transitioning.current = true
         },
@@ -206,9 +219,15 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
           // post update
           transitioning.current = false
+          introIn.current = true
         },
       })
-      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 1 }, { value: 0 }, "<")
+      .fromTo(
+        aboutTransitionPass.current.material.uniforms.u_progress,
+        { value: 1 },
+        { value: 0, duration: 1.5, ease: "power1.inOut" },
+        "<"
+      )
   }, [])
 
   const onRouteUpdated = () => {
@@ -270,8 +289,20 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   /* --------------------------------- effects -------------------------------- */
   // setup initial scene
   useEffect(() => {
-    currRender.current.scene = homeSceneRef.current?.scene()
-    currRender.current.camera = homeSceneRef.current?.camera()
+    switch (asPath) {
+      case "/about":
+        currRender.current.scene = aboutSceneRef.current?.scene()
+        currRender.current.camera = aboutSceneRef.current?.camera()
+        break
+      case "/":
+        currRender.current.scene = homeSceneRef.current?.scene()
+        currRender.current.camera = homeSceneRef.current?.camera()
+        break
+      default:
+        break
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // setup transition passes
@@ -279,7 +310,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     aboutTransitionPass.current.init(aboutSceneRef.current?.scene(), aboutSceneRef.current?.camera())
 
     outputPass.current.init()
-    passQueue.current.push(outputPass.current)
+    // passQueue.current.push(outputPass.current)
   }, [])
 
   // resize
@@ -296,6 +327,8 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   // transition
   useEffect(() => {
+    introIn.current = false
+
     if (transitioning.current) {
       needsTransition.current = true
       return
@@ -304,6 +337,22 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     onRouteUpdated()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asPath])
+
+  // initial UI intro
+  useEffect(() => {
+    if (props.show) {
+      setAnimateIntro(true)
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.show])
+
+  // post UI intro - animate in scene
+  useEffect(() => {
+    if (animateInScene) {
+      introIn.current = true
+    }
+  }, [animateInScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -314,6 +363,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         loader={props.loader}
         preinitComplete={props.preinitComplete}
         show={props.show}
+        introIn={introIn}
       />
     </>
   )
@@ -404,7 +454,7 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} className={cn("z-[1]", "fixed inset-0", "bg-white")}>
+    <div ref={containerRef} className={cn("z-[2]", "fixed inset-0", "bg-white")}>
       {/* bg */}
       <div
         className={cn("absolute inset-0", "pointer-events-none select-none")}
@@ -452,10 +502,154 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
   )
 }
 
+const Intro = () => {
+  /* ---------------------------------- refs ---------------------------------- */
+  // ui
+  const introTitleRef = useRef<HTMLDivElement | null>(null)
+  const introTitleShrinkRef = useRef<HTMLDivElement | null>(null)
+  const introDescRef = useRef<HTMLDivElement | null>(null)
+
+  const splittedTitleRef = useRef<SplitType | null>(null)
+  const splittedDescriptionRef = useRef<SplitType | null>(null)
+
+  // params
+  const titleTopOffset = useRef(0)
+
+  /* ---------------------------------- atoms --------------------------------- */
+  const [animateIntro] = useAtom(animateIntroAtom)
+  const [, setAnimateInScene] = useAtom(animateInSceneAtom)
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup text
+  useEffect(() => {
+    if (introTitleRef.current) {
+      splittedTitleRef.current?.revert()
+      splittedTitleRef.current = new SplitType(introTitleRef.current, { types: "words" })
+
+      // set position
+      ;(splittedTitleRef.current.words ?? []).forEach((word) => {
+        // eslint-disable-next-line no-param-reassign
+        word.style.transform = "translate3d(0, 100%, 0)"
+      })
+    }
+
+    if (introDescRef.current) {
+      splittedDescriptionRef.current?.revert()
+      splittedDescriptionRef.current = new SplitType(introDescRef.current, { types: "words" })
+
+      // set position
+      ;(splittedDescriptionRef.current.words ?? []).forEach((word) => {
+        // eslint-disable-next-line no-param-reassign
+        word.style.transform = "translate3d(0, -100%, 0)"
+      })
+    }
+  }, [])
+
+  // setup offsets
+  useEffect(() => {
+    // get variables
+    const titleRect = introTitleRef.current?.getBoundingClientRect()
+    const shrinkTitleRect = introTitleShrinkRef.current?.getBoundingClientRect()
+    const finalTitleRect = document.getElementById(headerTextId)?.getBoundingClientRect()
+
+    const titleHeight = titleRect?.height ?? 0
+    const titleTop = titleRect?.y ?? 0
+    const shrinkTitleHeight = shrinkTitleRect?.height ?? 0
+    const finalTitleTop = finalTitleRect?.top ?? 0
+
+    const heightOffset = titleHeight - shrinkTitleHeight
+    const topOffset = titleTop + heightOffset * 0.5
+    titleTopOffset.current = -topOffset + finalTitleTop
+  }, [])
+
+  // animate intro
+  useEffect(() => {
+    if (animateIntro) {
+      gsap
+        .timeline({})
+
+        // animate in
+        .to(splittedTitleRef.current?.words ?? [], { y: 0, stagger: 0.2, ease: "power1.inOut" })
+        .to(splittedDescriptionRef.current?.words ?? [], { y: 0, stagger: 0.1, ease: "power1.inOut" }, "<0.15")
+
+        // animate out
+        .to(
+          (splittedDescriptionRef.current?.words ?? []).slice(0, 2),
+          { x: "-100vw", duration: 1, ease: "power1.inOut" },
+          ">1"
+        )
+        .to(
+          (splittedDescriptionRef.current?.words ?? []).slice(2),
+          { x: "100vw", duration: 1, ease: "power1.inOut" },
+          "<"
+        )
+        .add(() => {
+          setAnimateInScene(true)
+        }, "<")
+        .to(
+          introTitleRef.current,
+          {
+            y: `${titleTopOffset.current}px`,
+            fontSize: "1rem",
+            color: "#aaa",
+            duration: 1,
+            ease: "power1.inOut",
+          },
+          "<"
+        )
+
+        // swap header + title text
+        .to(introTitleRef.current, { autoAlpha: 0, duration: 2 }, ">")
+        .to(`#${headerTextId}`, { autoAlpha: 1, duration: 2 }, "<")
+    }
+  }, [animateIntro, setAnimateInScene])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div
+      className={cn(
+        "fixed inset-0",
+        "min-h-[100vh]",
+        "flex flex-col items-center justify-center",
+        "pointer-events-none"
+      )}
+    >
+      {/* title */}
+      <div className="relative flex">
+        <h2
+          ref={introTitleRef}
+          className={cn("mb-[0]", "whitespace-pre font-heading text-[4.25rem] font-medium uppercase leading-[1]")}
+        >
+          <div className="overflow-hidden">Sujen Phea</div>
+        </h2>
+
+        {/* mock text */}
+        <div
+          ref={introTitleShrinkRef}
+          className={cn(
+            "invisible opacity-0",
+            "absolute bottom-0 left-1/2 -translate-x-1/2",
+            "whitespace-pre font-heading text-[1rem] font-medium uppercase leading-[1]"
+          )}
+        >
+          Sujen Phea
+        </div>
+      </div>
+
+      {/* description */}
+      <h4 ref={introDescRef} className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase")}>
+        <div className="overflow-y-hidden">Creative Web Developer</div>
+      </h4>
+    </div>
+  )
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
 const Layout = (props: { children: ReactNode }) => {
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
   const sectionsToPreinit = useRef(1)
   const loader = useRef<Loader>(null!)
@@ -504,15 +698,46 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* header */}
-      <div className="fixed left-1/2 top-8 -translate-x-1/2">
-        <div className="text-lg font-medium uppercase text-[#aaa]">Sujen Phea</div>
+      <div id={headerTextId} className={cn("opacity-0", "fixed left-1/2 top-8 -translate-x-1/2")}>
+        <div className="text-[1rem] font-medium uppercase leading-[1] text-[#aaa]">Sujen Phea</div>
       </div>
 
       {/* navigation */}
-      <div className={cn("fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col gap-2")}>
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
+      <div className={cn("z-[1]", "fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col")}>
+        {Navigations.map((nav, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <Link href={nav.url} key={i} className={cn("w-[180px] py-2", "flex items-center justify-end", "group")}>
+            <p
+              className={cn(
+                "px-[1em]",
+                "whitespace-nowrap text-xs uppercase",
+                "select-none",
+                "opacity-50 group-hover:translate-x-[20px] group-hover:opacity-100",
+                asPath === nav.url && "translate-x-[20px] opacity-100",
+                "[transition:transform_500ms_cubic-bezier(0.25,1,0.26,1),opacity_500ms_cubic-bezier(0.25,1,0.26,1)]"
+              )}
+              style={{
+                textShadow: "0 0 5px rgba(150,150,150,0.8)",
+              }}
+            >
+              {nav.label}
+            </p>
+
+            <div
+              className={cn(
+                "h-px w-[80px] bg-[#efefef]",
+                "select-none",
+                "opacity-20 group-hover:scale-x-50 group-hover:opacity-100",
+                asPath === nav.url && "scale-x-50 opacity-100",
+                "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1),opacity_400ms_cubic-bezier(0.67,0,0.57,1)]"
+              )}
+            />
+          </Link>
+        ))}
       </div>
+
+      {/* intro */}
+      <Intro />
 
       {/* main */}
       {engineSetup && <main className="pointer-events-none relative">{props.children}</main>}
@@ -525,8 +750,10 @@ const Layout = (props: { children: ReactNode }) => {
 /* -------------------------------------------------------------------------- */
 export default function App(props: AppProps) {
   return (
-    <Layout>
-      <props.Component {...props.pageProps} />
-    </Layout>
+    <Provider>
+      <Layout>
+        <props.Component {...props.pageProps} />
+      </Layout>
+    </Provider>
   )
 }
