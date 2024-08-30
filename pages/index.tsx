@@ -49,12 +49,12 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
 
       // animate title
       const titleShowRatio = MathUtils.fit(showScreenOffset, 1, 1.5, 0, 1, Ease.cubicOut)
-      const titleHideRatio = MathUtils.fit(hideScreenOffset, -0.7, -0.2, 0, 1, Ease.cubicIn)
+      const titleHideRatio = MathUtils.fit(hideScreenOffset, -0.8, -0.3, 0, 1, Ease.cubicIn)
       titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
 
       // animate description
       const descShowRatio = MathUtils.fit(showScreenOffset, 1.2, 1.7, 0, 1, Ease.cubicOut)
-      const descHideRatio = MathUtils.fit(hideScreenOffset, -0.5, 0.0, 0, 1, Ease.cubicIn)
+      const descHideRatio = MathUtils.fit(hideScreenOffset, -0.6, -0.3, 0, 1, Ease.cubicIn)
       descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
     })
   }
