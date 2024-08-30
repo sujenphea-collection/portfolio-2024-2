@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { AnimatePresence, motion } from "framer-motion"
 import gsap from "gsap"
 import { Provider, useAtom } from "jotai"
-import { ReactLenis } from "lenis/dist/lenis-react"
+import { ReactLenis, useLenis } from "lenis/dist/lenis-react"
 import { AppProps } from "next/app"
 import { Nunito } from "next/font/google"
 import Head from "next/head"
@@ -12,7 +12,7 @@ import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import SplitType from "split-type"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
-import { animateInSceneAtom, animateIntroAtom } from "../src/atoms/sceneAtoms"
+import { animateInSceneAtom, animateIntroAtom, enableScrollAtom } from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
@@ -134,6 +134,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   /* ---------------------------------- atom ---------------------------------- */
   const [, setAnimateIntro] = useAtom(animateIntroAtom)
   const [animateInScene] = useAtom(animateInSceneAtom)
+  const [, setEnableScroll] = useAtom(enableScrollAtom)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -144,51 +145,55 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     toRenderTarget.current.setSize(window.innerWidth, window.innerHeight)
   }
 
-  const toAboutTransition = useCallback((fromRoute: string) => {
-    if (!aboutTransitionPass.current.material) {
-      return
-    }
+  const toAboutTransition = useCallback(
+    (fromRoute: string) => {
+      if (!aboutTransitionPass.current.material) {
+        return
+      }
 
-    aboutTransitionPass.current.reverse = false
-    aboutTransitionPass.current.toRenderScene = aboutSceneRef.current?.scene()
-    aboutTransitionPass.current.toRenderCamera = aboutSceneRef.current?.camera()
-    passQueue.current.push(aboutTransitionPass.current)
+      aboutTransitionPass.current.reverse = false
+      aboutTransitionPass.current.toRenderScene = aboutSceneRef.current?.scene()
+      aboutTransitionPass.current.toRenderCamera = aboutSceneRef.current?.camera()
+      passQueue.current.push(aboutTransitionPass.current)
 
-    gsap
-      .timeline({
-        defaults: { duration: 2, ease: "power1.inOut" },
-        onStart: () => {
-          transitioning.current = true
-        },
-        onComplete: () => {
-          transitioning.current = false
-        },
-      })
-      .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 0 }, { value: 1 }, "<")
-      .call(
-        () => {
-          // update renders
-          currRender.current = {
-            scene: aboutSceneRef.current?.scene(),
-            camera: aboutSceneRef.current?.camera(),
-          }
-        },
-        undefined,
-        ">"
-      )
-      .call(
-        () => {
-          // update routes to update
-          routesToUpdate.current.splice(routesToUpdate.current.indexOf(fromRoute), 1)
+      gsap
+        .timeline({
+          defaults: { duration: 2, ease: "power1.inOut" },
+          onStart: () => {
+            transitioning.current = true
+          },
+          onComplete: () => {
+            transitioning.current = false
+            setEnableScroll(true)
+          },
+        })
+        .fromTo(aboutTransitionPass.current.material.uniforms.u_progress, { value: 0 }, { value: 1 }, "<")
+        .call(
+          () => {
+            // update renders
+            currRender.current = {
+              scene: aboutSceneRef.current?.scene(),
+              camera: aboutSceneRef.current?.camera(),
+            }
+          },
+          undefined,
+          ">"
+        )
+        .call(
+          () => {
+            // update routes to update
+            routesToUpdate.current.splice(routesToUpdate.current.indexOf(fromRoute), 1)
 
-          // update passes
-          const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
-          passQueue.current.splice(passIndex, 1)
-        },
-        undefined,
-        "+=0.1"
-      )
-  }, [])
+            // update passes
+            const passIndex = passQueue.current.indexOf(aboutTransitionPass.current)
+            passQueue.current.splice(passIndex, 1)
+          },
+          undefined,
+          "+=0.1"
+        )
+    },
+    [setEnableScroll]
+  )
 
   const fromAboutTransition = useCallback(() => {
     if (!aboutTransitionPass.current.material) {
@@ -330,6 +335,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   // transition
   useEffect(() => {
     introIn.current = false
+    setEnableScroll(false)
 
     if (transitioning.current) {
       needsTransition.current = true
@@ -651,10 +657,14 @@ const Intro = () => {
 /* -------------------------------------------------------------------------- */
 const Layout = (props: { children: ReactNode }) => {
   const { asPath } = useRouter()
+  const lenis = useLenis()
 
   /* ---------------------------------- refs ---------------------------------- */
   const sectionsToPreinit = useRef(1)
   const loader = useRef<Loader>(null!)
+
+  /* ---------------------------------- atoms --------------------------------- */
+  const [enableScroll] = useAtom(enableScrollAtom)
 
   /* --------------------------------- states --------------------------------- */
   const [engineSetup, setEngineSetup] = useState(false)
@@ -676,6 +686,16 @@ const Layout = (props: { children: ReactNode }) => {
   useEffect(() => {
     loader.current = new Loader(Properties.gl)
   }, [])
+
+  // start/stop scroll
+  useEffect(() => {
+    if (enableScroll) {
+      lenis?.resize()
+      lenis?.start()
+    } else {
+      lenis?.stop()
+    }
+  }, [enableScroll, lenis])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -747,19 +767,21 @@ const Layout = (props: { children: ReactNode }) => {
       <Intro />
 
       {/* main */}
-      {engineSetup && (
-        <AnimatePresence initial={false}>
-          <motion.main
-            key={asPath}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.3 } }}
-            className="pointer-events-none relative"
-          >
-            <ReactLenis root>{props.children}</ReactLenis>
-          </motion.main>
-        </AnimatePresence>
-      )}
+      <ReactLenis root>
+        {engineSetup && (
+          <AnimatePresence initial={false}>
+            <motion.main
+              key={asPath}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.3 } }}
+              className="pointer-events-none relative"
+            >
+              {props.children}
+            </motion.main>
+          </AnimatePresence>
+        )}
+      </ReactLenis>
     </>
   )
 }
