@@ -94,7 +94,10 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
         <div key={i} className="pb-[150vh]">
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div
-              className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
+              className={cn(
+                "absolute left-[70%] top-1/2 -translate-x-1/2 -translate-y-1/2",
+                "flex flex-col items-start"
+              )}
             >
               {/* title */}
               <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
