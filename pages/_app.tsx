@@ -756,7 +756,7 @@ const Layout = (props: { children: ReactNode }) => {
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
             className="pointer-events-none relative"
           >
-            <ReactLenis>{props.children}</ReactLenis>
+            <ReactLenis root>{props.children}</ReactLenis>
           </motion.main>
         </AnimatePresence>
       )}
