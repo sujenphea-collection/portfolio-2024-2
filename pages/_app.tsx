@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { AnimatePresence, motion } from "framer-motion"
 import gsap from "gsap"
 import { Provider, useAtom } from "jotai"
+import { ReactLenis } from "lenis/dist/lenis-react"
 import { AppProps } from "next/app"
 import { Nunito } from "next/font/google"
 import Head from "next/head"
@@ -755,7 +756,7 @@ const Layout = (props: { children: ReactNode }) => {
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
             className="pointer-events-none relative"
           >
-            {props.children}
+            <ReactLenis>{props.children}</ReactLenis>
           </motion.main>
         </AnimatePresence>
       )}
