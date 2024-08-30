@@ -1,6 +1,9 @@
 import { useLenis } from "lenis/dist/lenis-react"
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
 import { basePadding, contactSectionId, homeSectionId, projectsSectionId } from "../src/constants/uiConstants"
+import Ease from "../src/utils/ease"
+import { MathUtils } from "../src/utils/math"
+import { Properties } from "../src/utils/properties"
 import { cn } from "../src/utils/utils"
 
 /* -------------------------------------------------------------------------- */
@@ -21,7 +24,21 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   const titleRef = useRef<HTMLDivElement | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
-  const update = () => {}
+  const update = () => {
+    const contactBounds = containerRef.current?.getBoundingClientRect()
+    const contactTop = contactBounds?.top ?? 0
+    const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    const showRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 2, 0, 1, Ease.cubicOut)
+    if (titleRef.current) {
+      const offsetY = (1 - showRatio) * 100
+      titleRef.current.style.transform = `translateY(${offsetY}%)`
+    }
+
+    if (contentRef.current) {
+      contentRef.current.style.visibility = contactShowScreenOffset > 0 ? "visible" : "hidden"
+    }
+  }
 
   /* --------------------------------- scroll --------------------------------- */
   useLenis(() => {
@@ -49,8 +66,10 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
           className={cn("absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
         >
           {/* title */}
-          <div ref={titleRef} className={cn("mb-[1.5rem]", "overflow-hidden")}>
-            <h2 className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>Contact</h2>
+          <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+            <h2 ref={titleRef} className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
+              Contact
+            </h2>
           </div>
         </div>
       </div>
