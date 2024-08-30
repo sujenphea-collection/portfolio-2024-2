@@ -1,16 +1,27 @@
 import { useLenis } from "lenis/dist/lenis-react"
-import { useRef } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
 import { basePadding, contactSectionId, homeSectionId, projectsSectionId } from "../src/constants/uiConstants"
 import { cn } from "../src/utils/utils"
 
 /* -------------------------------------------------------------------------- */
+/*                                    types                                   */
+/* -------------------------------------------------------------------------- */
+type ComponentRef = {
+  update: (delta: number) => void
+  resize?: (width: number, height: number) => void
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                 components                                 */
 /* -------------------------------------------------------------------------- */
-const ContactSection = () => {
+const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const containerRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
+
+  /* -------------------------------- functions ------------------------------- */
+  const update = () => {}
 
   /* --------------------------------- scroll --------------------------------- */
   useLenis(() => {
@@ -21,6 +32,11 @@ const ContactSection = () => {
       contentRef.current.style.transform = `translateY(${-containerTop}px)`
     }
   })
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    update,
+  }))
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -40,12 +56,38 @@ const ContactSection = () => {
       </div>
     </div>
   )
-}
+})
+ContactSection.displayName = "ContactSection"
 
 /* -------------------------------------------------------------------------- */
 /*                                    main                                    */
 /* -------------------------------------------------------------------------- */
 export default function Home() {
+  /* ---------------------------------- refs ---------------------------------- */
+  const contactRef = useRef<ComponentRef | null>(null)
+
+  const dateTime = useRef(performance.now())
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup raf
+  useEffect(() => {
+    const loop = () => {
+      window.requestAnimationFrame(loop)
+
+      const a = performance.now()
+      let e = (a - dateTime.current) / 1e3
+      dateTime.current = a
+      e = Math.min(e, 1 / 20)
+
+      contactRef.current?.update(e)
+    }
+
+    window.requestAnimationFrame(loop)
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ---------------------------------- main ---------------------------------- */
   return (
     <>
       {/* content */}
@@ -123,7 +165,7 @@ export default function Home() {
         </div>
 
         {/* contact */}
-        <ContactSection />
+        <ContactSection ref={contactRef} />
       </div>
     </>
   )
