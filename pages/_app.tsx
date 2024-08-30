@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { AnimatePresence, motion } from "framer-motion"
 import gsap from "gsap"
 import { Provider, useAtom } from "jotai"
 import { AppProps } from "next/app"
@@ -705,8 +706,13 @@ const Layout = (props: { children: ReactNode }) => {
       {/* navigation */}
       <div className={cn("z-[1]", "fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col")}>
         {Navigations.map((nav, i) => (
-          // eslint-disable-next-line react/no-array-index-key
-          <Link href={nav.url} key={i} className={cn("w-[180px] py-2", "flex items-center justify-end", "group")}>
+          <Link
+            href={nav.url}
+            // eslint-disable-next-line react/no-array-index-key
+            key={i}
+            scroll={false}
+            className={cn("w-[180px] py-2", "flex items-center justify-end", "group")}
+          >
             <p
               className={cn(
                 "px-[1em]",
@@ -740,7 +746,19 @@ const Layout = (props: { children: ReactNode }) => {
       <Intro />
 
       {/* main */}
-      {engineSetup && <main className="pointer-events-none relative">{props.children}</main>}
+      {engineSetup && (
+        <AnimatePresence initial={false}>
+          <motion.main
+            key={asPath}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            className="pointer-events-none relative"
+          >
+            {props.children}
+          </motion.main>
+        </AnimatePresence>
+      )}
     </>
   )
 }
