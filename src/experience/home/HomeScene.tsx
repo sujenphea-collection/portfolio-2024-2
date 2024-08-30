@@ -1,6 +1,7 @@
 import { useCamera } from "@react-three/drei"
 import { createPortal, useFrame } from "@react-three/fiber"
 import gsap, { Quad } from "gsap"
+import { useAtom } from "jotai"
 import { useRouter } from "next/router"
 import { forwardRef, MutableRefObject, useEffect, useImperativeHandle, useRef } from "react"
 import {
@@ -41,6 +42,7 @@ import {
   ZeroFactor,
 } from "three"
 import { clamp, randFloat } from "three/src/math/MathUtils"
+import { enableScrollAtom } from "../../atoms/sceneAtoms"
 import {
   aboutIntroId,
   aboutSectionId,
@@ -1255,6 +1257,9 @@ Contact.displayName = "Contact"
 export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((props, ref) => {
   const { asPath } = useRouter()
 
+  /* ---------------------------------- atoms --------------------------------- */
+  const [, setEnableScroll] = useAtom(enableScrollAtom)
+
   /* ---------------------------------- refs ---------------------------------- */
   const scene = useRef(new Scene())
   const camera = useRef(new PerspectiveCamera(45, 1, 0.1, 200))
@@ -1370,6 +1375,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         onComplete: () => {
           introComplete.current = true
           needsIntro.current = false
+          setEnableScroll(true)
         },
       })
       .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 3, ease: "power1.in" })
