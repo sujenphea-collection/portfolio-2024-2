@@ -689,6 +689,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_time: { value: 0 },
     u_showRatio: { value: 1 },
     u_mixRatio: { value: 0 },
+    u_hideRatio: { value: 0 },
 
     u_mouse: { value: new Vector2() },
   })
@@ -712,6 +713,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const projectTextures = useRef<(Texture | null)[]>([])
 
   const splitOffset = useRef(0)
+  const projectHideY = useRef(0)
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -865,6 +867,16 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
     screenUniforms.current.u_mixRatio.value = ratio
 
+    // black screen
+    const screenHideRatio = MathUtils.fit(
+      (window.scrollY - projectHideY.current) / Properties.viewportHeight,
+      -1,
+      0,
+      0,
+      1
+    )
+    screenUniforms.current.u_hideRatio.value = screenHideRatio
+
     // contact - move screen
     const contactTop = contactBounds?.top ?? 0
     const contactBottom = contactBounds?.bottom ?? 0
@@ -900,12 +912,15 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     projectsIndividualUI.current = []
     contactUI.current = document.getElementById(contactSectionId)
 
-    Array.from(projectsUI.current?.children || []).forEach((el) => {
-      projectsIndividualUI.current.push(el as HTMLElement)
+    Array.from(projectsUI.current?.children || []).forEach((_el) => {
+      const el = _el as HTMLElement
 
+      projectsIndividualUI.current.push(el)
       if (projectTextures.current.length <= 0) {
         projectTextures.current.push(null)
       }
+
+      projectHideY.current = Math.max(projectHideY.current, el.offsetTop + el.offsetHeight)
     })
   }, [asPath])
 

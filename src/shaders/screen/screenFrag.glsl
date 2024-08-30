@@ -6,6 +6,7 @@ uniform sampler2D u_noiseTexture;
 uniform float u_time;
 uniform float u_showRatio;
 uniform float u_mixRatio;
+uniform float u_hideRatio;
 
 uniform vec2 u_mouse;
 
@@ -97,7 +98,8 @@ void main() {
   vec3 texel2 = vec3(texture(u_texture2, vec2(offsetUv.x - colorShift, offsetUv.y)).r,
                      texture(u_texture2, vec2(offsetUv.x, offsetUv.y)).g,
                      texture(u_texture2, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
-  color += mix(texel1, texel2, mixf);
+  color += mix(texel1, texel2, mixf) * (1.0 - u_hideRatio);
+  color += vec3(0.1, 0.1, 0.21) * u_hideRatio;
 
   // add scanline
   float scanline = sin(v_uv.y * 1000.0);
