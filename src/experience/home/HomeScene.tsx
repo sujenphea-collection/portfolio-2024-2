@@ -41,7 +41,7 @@ import {
   WebGLRenderTarget,
   ZeroFactor,
 } from "three"
-import { clamp, randFloat } from "three/src/math/MathUtils"
+import { clamp, lerp, randFloat } from "three/src/math/MathUtils"
 import { enableScrollAtom } from "../../atoms/sceneAtoms"
 import {
   aboutIntroId,
@@ -1283,6 +1283,10 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   const aboutUI = useRef(document.getElementById(aboutSectionId))
   const aboutIntroUI = useRef(document.getElementById(aboutIntroId))
 
+  // brownian
+  const brownianMotion = useRef(new BrownianMotion())
+  const brownianParams = useRef({ progress: 0 })
+
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
     camera.current.aspect = window.innerWidth / window.innerHeight
@@ -1296,7 +1300,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     contactRef.current?.resize?.(window.innerWidth, window.innerHeight)
   }
 
-  const updateCamera = () => {
+  const updateCamera = (delta: number) => {
     if (asPath !== "/" || !introComplete.current) {
       return
     }
@@ -1338,8 +1342,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         contactShowRatio
       )
     } else {
-      cameraPos = camera.current.position
-      cameraRot = camera.current.rotation
+      cameraPos = CameraPositions.contact.position
+      cameraRot = CameraPositions.contact.rotation
     }
 
     // set camera
@@ -1347,6 +1351,13 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
     tempEuler.current.set(cameraRot.x, cameraRot.y, cameraRot.z)
     camera.current.quaternion.setFromEuler(tempEuler.current)
+
+    // float
+    brownianParams.current.progress = lerp(brownianParams.current.progress, 1, 0.2)
+    brownianMotion.current.update(delta * brownianParams.current.progress)
+    camera.current.updateMatrix()
+    camera.current.matrix.multiply(brownianMotion.current.matrix)
+    camera.current.matrix.decompose(camera.current.position, camera.current.quaternion, camera.current.scale)
   }
 
   const reset = () => {
@@ -1419,7 +1430,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       needsIntro.current = false
     }
 
-    updateCamera()
+    updateCamera(delta)
 
     // update scene
     particlesRef.current?.update?.(delta)
@@ -1445,6 +1456,17 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // setup brownian motion
+  useEffect(() => {
+    brownianMotion.current.positionAmplitude = 0.026
+    brownianMotion.current.rotationAmplitude = 0.02
+
+    brownianMotion.current.positionFrequency = 0.3
+    brownianMotion.current.rotationFrequency = 0.5
+
+    brownianMotion.current._positionScale.multiplyScalar(0.1)
+  }, [asPath, introComplete])
 
   // resize
   useEffect(() => {
