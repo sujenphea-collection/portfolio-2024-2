@@ -434,16 +434,6 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
       .to(progressBarRef.current, { scaleX: `${percent - 0.1}%`, duration: 1 })
   }, [])
 
-  const dismiss = () => {
-    props.onDismiss()
-
-    gsap.to(containerRef.current, {
-      autoAlpha: 0,
-      duration: 0.5,
-      delay: 0.2,
-    })
-  }
-
   /* --------------------------------- effects -------------------------------- */
   // setup
   useEffect(() => {
@@ -465,16 +455,23 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
     props.loader?.start()
   }, [props.loader, props.startLoader])
 
+  useEffect(() => {
+    if (loaded) {
+      props.onDismiss()
+
+      gsap.to(containerRef.current, {
+        autoAlpha: 0,
+        duration: 0.5,
+        delay: 0.2,
+      })
+    }
+  }, [loaded, props])
+
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} className={cn("z-[2]", "fixed inset-0", "bg-white")}>
+    <div ref={containerRef} className={cn("z-[2]", "fixed inset-0")}>
       {/* bg */}
-      <div
-        className={cn("absolute inset-0", "pointer-events-none select-none")}
-        style={{
-          background: "linear-gradient(90deg, #E0EAFC, #CFDEF3)",
-        }}
-      />
+      <div className={cn("absolute inset-0", "pointer-events-none select-none", "bg-black")} />
 
       {/* content */}
       <div className={cn("relative h-full w-full", "flex flex-col items-center justify-center")}>
@@ -484,32 +481,13 @@ const Preloader = (props: { loader: Loader; startLoader: boolean; onDismiss: () 
             ref={progressBarRef}
             className={cn("h-full w-full", "rounded-[inherit]", "origin-center")}
             style={{
-              background: "linear-gradient(90deg, #141E30, #243B55)",
+              background: "linear-gradient(90deg, #fff, #fff)",
               backgroundSize: "400px 20px",
               backgroundRepeat: "repeat",
               backgroundOrigin: "center",
             }}
           />
         </div>
-
-        {/* continue button */}
-        <button
-          type="button"
-          disabled={!loaded}
-          onClick={dismiss}
-          className={cn(
-            "relative mt-8",
-            "text-bgColor",
-            "rounded-[40px]",
-            "transition-opacity duration-200",
-            "disabled:opacity-40"
-          )}
-        >
-          {/* content */}
-          <div className={cn("relative px-10 py-3", "rounded-[inherit] bg-contentColor")}>
-            <div className={cn("text-sm font-medium uppercase")}>Continue</div>
-          </div>
-        </button>
       </div>
     </div>
   )
