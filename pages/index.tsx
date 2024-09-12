@@ -288,6 +288,7 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
+  const titleMobileRef = useRef<HTMLDivElement | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const update = () => {
@@ -299,6 +300,11 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
     if (titleRef.current) {
       const offsetY = (1 - showRatio) * 100
       titleRef.current.style.transform = `translateY(${offsetY}%)`
+    }
+
+    if (titleMobileRef.current) {
+      const offsetY = (1 - showRatio) * 100
+      titleMobileRef.current.style.transform = `translateY(${offsetY}%)`
     }
 
     if (contentRef.current) {
@@ -323,20 +329,43 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} id={contactSectionId} className="pb-[250vh]">
-      <div
-        ref={contentRef}
-        className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}
-      >
+    <div>
+      {/* container */}
+      <div ref={containerRef} id={contactSectionId} className="pb-[250vh]">
         <div
-          className={cn("absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
+          ref={contentRef}
+          className={cn("relative min-h-[100dvh]", basePadding, "flex flex-col items-center justify-center")}
         >
-          {/* title */}
-          <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
-            <h2 ref={titleRef} className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
-              Contact
-            </h2>
+          <div
+            className={cn(
+              "absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2",
+              "hidden flex-col items-start lg:flex"
+            )}
+          >
+            {/* title */}
+            <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+              <h2
+                ref={titleRef}
+                className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+              >
+                Contact
+              </h2>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* mobile: content */}
+      {/* // ios lags in transform */}
+      <div className={cn("fixed left-1/2 top-[30dvh] -translate-x-1/2 -translate-y-1/2", "lg:hidden")}>
+        {/* title */}
+        <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+          <h2
+            ref={titleMobileRef}
+            className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+          >
+            Contact
+          </h2>
         </div>
       </div>
     </div>
