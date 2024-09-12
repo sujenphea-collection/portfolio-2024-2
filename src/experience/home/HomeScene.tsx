@@ -42,7 +42,7 @@ import {
   ZeroFactor,
 } from "three"
 import { clamp, lerp, randFloat } from "three/src/math/MathUtils"
-import { enableScrollAtom } from "../../atoms/sceneAtoms"
+import { enableScrollAtom, postAnimateInSceneAtom } from "../../atoms/sceneAtoms"
 import {
   aboutIntroId,
   aboutSectionId,
@@ -1288,6 +1288,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
   /* ---------------------------------- atoms --------------------------------- */
   const [, setEnableScroll] = useAtom(enableScrollAtom)
+  const [, setPostAnimateInScene] = useAtom(postAnimateInSceneAtom)
 
   /* ---------------------------------- refs ---------------------------------- */
   const scene = useRef(new Scene())
@@ -1428,6 +1429,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           introComplete.current = true
           needsIntro.current = false
           setEnableScroll(true)
+          setPostAnimateInScene(true)
         },
       })
       .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 3, ease: "power1.in" })

@@ -12,7 +12,7 @@ import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import SplitType from "split-type"
 import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
-import { animateInSceneAtom, animateIntroAtom, enableScrollAtom } from "../src/atoms/sceneAtoms"
+import { animateInSceneAtom, animateIntroAtom, enableScrollAtom, postAnimateInSceneAtom } from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
@@ -365,7 +365,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   /* ---------------------------------- main ---------------------------------- */
   return (
     <>
-      <AboutScene ref={aboutSceneRef} />
+      <AboutScene ref={aboutSceneRef} introIn={introIn} />
       <HomeExperience
         ref={homeSceneRef}
         loader={props.loader}
@@ -658,6 +658,75 @@ const Intro = () => {
   )
 }
 
+const Navigation = () => {
+  const { asPath } = useRouter()
+
+  /* ---------------------------------- refs ---------------------------------- */
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  /* ---------------------------------- atoms --------------------------------- */
+  const [postAnimateInScene] = useAtom(postAnimateInSceneAtom)
+
+  /* --------------------------------- effects -------------------------------- */
+  // animate
+  useEffect(() => {
+    if (!postAnimateInScene) {
+      return
+    }
+
+    gsap
+      .timeline()
+      .to(containerRef.current?.children ?? [], { translateX: 0, stagger: 0.2, duration: 1, ease: "expo.inOut" })
+  }, [postAnimateInScene])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div
+      ref={containerRef}
+      className={cn("z-[1]", "fixed right-0 top-20 -translate-y-1/2 lg:top-1/2", "flex flex-col", "overflow-hidden")}
+    >
+      {Navigations.map((nav, i) => (
+        <Link
+          href={nav.url}
+          // eslint-disable-next-line react/no-array-index-key
+          key={i}
+          scroll={false}
+          className={cn("w-[180px] py-2", "flex items-center justify-end", "group overflow-hidden")}
+          style={{
+            transform: "translateX(100%)",
+          }}
+        >
+          <p
+            className={cn(
+              "px-[1em]",
+              "whitespace-nowrap text-xs uppercase",
+              "select-none",
+              "opacity-50 group-hover:translate-x-[20px] group-hover:opacity-100",
+              asPath === nav.url && "translate-x-[20px] opacity-100",
+              "[transition:transform_500ms_cubic-bezier(0.25,1,0.26,1),opacity_500ms_cubic-bezier(0.25,1,0.26,1)]"
+            )}
+            style={{
+              textShadow: "0 0 5px rgba(150,150,150,0.8)",
+            }}
+          >
+            {nav.label}
+          </p>
+
+          <div
+            className={cn(
+              "h-px w-[80px] bg-[#efefef]",
+              "select-none",
+              "opacity-20 group-hover:scale-x-50 group-hover:opacity-100",
+              asPath === nav.url && "scale-x-50 opacity-100",
+              "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1),opacity_400ms_cubic-bezier(0.67,0,0.57,1)]"
+            )}
+          />
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   layout                                   */
 /* -------------------------------------------------------------------------- */
@@ -731,43 +800,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* navigation */}
-      <div className={cn("z-[1]", "fixed right-0 top-20 -translate-y-1/2 lg:top-1/2", "flex flex-col")}>
-        {Navigations.map((nav, i) => (
-          <Link
-            href={nav.url}
-            // eslint-disable-next-line react/no-array-index-key
-            key={i}
-            scroll={false}
-            className={cn("w-[180px] py-2", "flex items-center justify-end", "group")}
-          >
-            <p
-              className={cn(
-                "px-[1em]",
-                "whitespace-nowrap text-xs uppercase",
-                "select-none",
-                "opacity-50 group-hover:translate-x-[20px] group-hover:opacity-100",
-                asPath === nav.url && "translate-x-[20px] opacity-100",
-                "[transition:transform_500ms_cubic-bezier(0.25,1,0.26,1),opacity_500ms_cubic-bezier(0.25,1,0.26,1)]"
-              )}
-              style={{
-                textShadow: "0 0 5px rgba(150,150,150,0.8)",
-              }}
-            >
-              {nav.label}
-            </p>
-
-            <div
-              className={cn(
-                "h-px w-[80px] bg-[#efefef]",
-                "select-none",
-                "opacity-20 group-hover:scale-x-50 group-hover:opacity-100",
-                asPath === nav.url && "scale-x-50 opacity-100",
-                "origin-right [transition:transform_400ms_cubic-bezier(0.67,0,0.57,1),opacity_400ms_cubic-bezier(0.67,0,0.57,1)]"
-              )}
-            />
-          </Link>
-        ))}
-      </div>
+      <Navigation />
 
       {/* intro */}
       {show && <Intro />}
