@@ -648,7 +648,10 @@ const Intro = () => {
       </div>
 
       {/* description */}
-      <h4 ref={introDescRef} className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase")}>
+      <h4
+        ref={introDescRef}
+        className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase", "pointer-events-none select-none")}
+      >
         <div className="overflow-hidden">Creative Web Developer</div>
       </h4>
     </div>
