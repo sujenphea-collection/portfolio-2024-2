@@ -50,12 +50,16 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
       // animate title
       const titleShowRatio = MathUtils.fit(showScreenOffset, 1, 1.5, 0, 1, Ease.cubicOut)
       const titleHideRatio = MathUtils.fit(hideScreenOffset, -0.8, -0.3, 0, 1, Ease.cubicIn)
-      titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
+      if (titles.current[i]) {
+        titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
+      }
 
       // animate description
       const descShowRatio = MathUtils.fit(showScreenOffset, 1.2, 1.7, 0, 1, Ease.cubicOut)
       const descHideRatio = MathUtils.fit(hideScreenOffset, -0.6, -0.3, 0, 1, Ease.cubicIn)
-      descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
+      if (descs.current[i]) {
+        descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
+      }
     })
   }
 
@@ -68,11 +72,13 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
       const containerTop = container.getBoundingClientRect().top
       content.style.transform = `translateY(${-containerTop}px)`
     })
+
+    update()
   })
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
-    update,
+    update: () => {},
   }))
 
   /* --------------------------------- effects -------------------------------- */
