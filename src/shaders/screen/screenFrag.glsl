@@ -114,9 +114,10 @@ void main() {
 
   // bottom
   float bottom = 1.0 - smoothstep(0.0, 0.3, v_worldPosition.y);
+  color -= bottom * 0.4;
 
   // set color
-  gl_FragColor = vec4(color - bottom * 0.4, alpha);
+  gl_FragColor = vec4(color * alpha, alpha);
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

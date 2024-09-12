@@ -980,21 +980,11 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
         {/* screen */}
         <mesh ref={screenLeftMeshRef} geometry={screenLeftGeometryRef.current ?? undefined}>
-          <shaderMaterial
-            uniforms={screenUniforms.current}
-            vertexShader={screenVert}
-            fragmentShader={screenFrag}
-            transparent
-          />
+          <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
 
         <mesh ref={screenRightMeshRef} geometry={screenRightGeometryRef.current ?? undefined}>
-          <shaderMaterial
-            uniforms={screenUniforms.current}
-            vertexShader={screenVert}
-            fragmentShader={screenFrag}
-            transparent
-          />
+          <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
 
         {/* pointer mesh */}
