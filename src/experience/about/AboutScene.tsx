@@ -54,7 +54,7 @@ export const AboutScene = forwardRef<SceneHandle, { introIn: MutableRefObject<bo
     <group>
       <mesh>
         <planeGeometry args={[10, 10]} />
-        <meshBasicMaterial color={0x363636} />
+        <meshBasicMaterial color={0x363636} toneMapped={false} />
       </mesh>
     </group>,
     scene.current

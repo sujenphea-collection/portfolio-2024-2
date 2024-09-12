@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import SplitType from "split-type"
-import { Camera, PerspectiveCamera, Scene, ShaderChunk } from "three"
+import { Camera, LinearSRGBColorSpace, NoToneMapping, PerspectiveCamera, Scene, ShaderChunk } from "three"
 import { animateInSceneAtom, animateIntroAtom, enableScrollAtom, postAnimateInSceneAtom } from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
@@ -254,6 +254,11 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
     if (!currRender.current.scene || !currRender.current.camera) {
       return
     }
+
+    // eslint-disable-next-line no-param-reassign
+    gl.toneMapping = NoToneMapping
+    // eslint-disable-next-line no-param-reassign
+    gl.outputColorSpace = LinearSRGBColorSpace
 
     const sortedQueue = passQueue.current
       .filter((q) => q.enabled)

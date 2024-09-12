@@ -118,4 +118,7 @@ void main() {
 
   // set color
   gl_FragColor = vec4(color - bottom * 0.3, alpha);
+
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
