@@ -7,6 +7,11 @@ import { cn } from "../src/utils/utils"
 
 export default function About() {
   /* ---------------------------------- refs ---------------------------------- */
+  const lineTopRef = useRef<HTMLDivElement | null>(null)
+  const lineBottomRef = useRef<HTMLDivElement | null>(null)
+  const lineLeftRef = useRef<HTMLDivElement | null>(null)
+  const lineRightRef = useRef<HTMLDivElement | null>(null)
+
   const descriptionRef = useRef<HTMLDivElement | null>(null)
   const splittedDescriptionRef = useRef<SplitType | null>(null)
 
@@ -43,12 +48,19 @@ export default function About() {
     }
 
     gsap
-      .timeline({ delay: 0.4 })
-      .to(splittedDescriptionRef.current?.words ?? [], {
-        y: 0,
-        stagger: 0.03,
-        ease: "power1.inOut",
-      })
+      .timeline({ delay: 1 })
+      .to(lineTopRef.current, { scaleX: 1, duration: 1 })
+      .to(lineLeftRef.current, { scaleY: 1, duration: 1 }, "<0.1")
+      .to(lineRightRef.current, { scaleY: 1, duration: 1 }, "<0.1")
+      .to(
+        splittedDescriptionRef.current?.words ?? [],
+        {
+          y: 0,
+          stagger: 0.03,
+          ease: "power1.inOut",
+        },
+        "<0.1"
+      )
       .to(
         splittedDescriptionRef.current?.words ?? [],
         {
@@ -58,6 +70,7 @@ export default function About() {
         },
         "<0.1"
       )
+      .to(lineBottomRef.current, { scaleX: 1, duration: 1 })
   }, [animateIn])
 
   /* ---------------------------------- main ---------------------------------- */
@@ -68,10 +81,44 @@ export default function About() {
         {/* decoration */}
         <div className={cn("absolute inset-0", "pointer-events-none, select-none")}>
           {/* top */}
-          <div className={cn("absolute inset-x-0 top-5 h-px", "border-t border-[#343434]")} />
+          <div
+            ref={lineTopRef}
+            className={cn(
+              "absolute inset-x-0 top-5 h-px",
+              "border-t border-[#343434]",
+              "origin-left scale-x-0 overflow-hidden"
+            )}
+          />
 
           {/* bottom */}
-          <div className={cn("absolute inset-x-0 bottom-5 h-px", "border-t border-[#343434]")} />
+          <div
+            ref={lineBottomRef}
+            className={cn(
+              "absolute inset-x-0 bottom-5 h-px",
+              "border-t border-[#343434]",
+              "origin-left scale-x-0 overflow-hidden"
+            )}
+          />
+
+          {/* left */}
+          <div
+            ref={lineLeftRef}
+            className={cn(
+              "absolute inset-y-0 left-5 w-px",
+              "border-r border-[#343434]",
+              "origin-top scale-y-0 overflow-hidden"
+            )}
+          />
+
+          {/* right */}
+          <div
+            ref={lineRightRef}
+            className={cn(
+              "absolute inset-y-0 right-5 w-px",
+              "border-r border-[#343434]",
+              "origin-bottom scale-y-0 overflow-hidden"
+            )}
+          />
         </div>
 
         {/* content */}
