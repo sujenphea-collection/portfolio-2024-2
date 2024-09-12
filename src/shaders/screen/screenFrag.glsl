@@ -99,7 +99,7 @@ void main() {
                      texture(u_texture2, vec2(offsetUv.x, offsetUv.y)).g,
                      texture(u_texture2, vec2(offsetUv.x + colorShift, offsetUv.y)).b);
   color += mix(texel1, texel2, mixf) * (1.0 - u_hideRatio);
-  color += vec3(0.1, 0.1, 0.21) * u_hideRatio;
+  color += vec3(0.1, 0.1, 0.1) * u_hideRatio;
 
   // add scanline
   float scanline = sin(v_uv.y * 1000.0);
@@ -114,7 +114,7 @@ void main() {
 
   // bottom
   float bottom = 1.0 - smoothstep(0.0, 0.3, v_worldPosition.y);
-  color -= bottom * 0.4;
+  color -= bottom * 0.3 * (1.0 - u_hideRatio);
 
   // set color
   gl_FragColor = vec4(color * alpha, alpha);
