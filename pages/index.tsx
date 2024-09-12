@@ -95,19 +95,32 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div
               className={cn(
-                "absolute left-[70%] top-1/2 -translate-x-1/2 -translate-y-1/2",
+                "lg:absolute lg:left-[70%] lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
                 "flex flex-col items-start"
               )}
             >
               {/* title */}
-              <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+              <div
+                className={cn(
+                  "lg:static",
+                  "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
+                  "mb-[1.5rem]",
+                  "overflow-hidden"
+                )}
+              >
                 <h2 className={cn("title", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
                   {project.title}
                 </h2>
               </div>
 
               {/* description */}
-              <div className="overflow-hidden">
+              <div
+                className={cn(
+                  "lg:static",
+                  "absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
+                  "overflow-hidden"
+                )}
+              >
                 <h4 className={cn("desc", "max-w-[40ch]", "text-[1.25rem]")}>{project.description}</h4>
               </div>
             </div>
