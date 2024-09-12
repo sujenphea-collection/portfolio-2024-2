@@ -626,7 +626,10 @@ const Intro = () => {
       <div className="relative flex">
         <h2
           ref={introTitleRef}
-          className={cn("mb-[0]", "whitespace-pre font-heading text-[4.25rem] font-medium uppercase leading-[1]")}
+          className={cn(
+            "mb-[0]",
+            "whitespace-pre font-heading text-[3rem] font-medium uppercase leading-[1] lg:text-[4.25rem]"
+          )}
         >
           <div className="overflow-hidden">Sujen Phea</div>
         </h2>
