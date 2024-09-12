@@ -76,7 +76,11 @@ export default function About() {
 
         {/* content */}
         <div
-          className={cn("relative min-h-[100vh]", "px-[max(3.5vw,100px)]", "flex flex-col items-center justify-center")}
+          className={cn(
+            "relative min-h-[100dvh]",
+            "px-[max(3.5vw,100px)]",
+            "flex flex-col items-center justify-center"
+          )}
         >
           {/* description */}
           <h4
