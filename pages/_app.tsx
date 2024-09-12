@@ -731,7 +731,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* navigation */}
-      <div className={cn("z-[1]", "fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col")}>
+      <div className={cn("z-[1]", "fixed right-0 top-20 -translate-y-1/2 lg:top-1/2", "flex flex-col")}>
         {Navigations.map((nav, i) => (
           <Link
             href={nav.url}
