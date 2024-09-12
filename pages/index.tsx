@@ -1,6 +1,6 @@
 import { useLenis } from "lenis/dist/lenis-react"
 import { useRouter } from "next/router"
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { basePadding, contactSectionId, homeSectionId, projectsSectionId } from "../src/constants/uiConstants"
 import Ease from "../src/utils/ease"
 import { MathUtils } from "../src/utils/math"
@@ -50,12 +50,16 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
       // animate title
       const titleShowRatio = MathUtils.fit(showScreenOffset, 1, 1.5, 0, 1, Ease.cubicOut)
       const titleHideRatio = MathUtils.fit(hideScreenOffset, -0.8, -0.3, 0, 1, Ease.cubicIn)
-      titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
+      if (titles.current[i]) {
+        titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
+      }
 
       // animate description
       const descShowRatio = MathUtils.fit(showScreenOffset, 1.2, 1.7, 0, 1, Ease.cubicOut)
       const descHideRatio = MathUtils.fit(hideScreenOffset, -0.6, -0.3, 0, 1, Ease.cubicIn)
-      descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
+      if (descs.current[i]) {
+        descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
+      }
     })
   }
 
@@ -68,11 +72,13 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
       const containerTop = container.getBoundingClientRect().top
       content.style.transform = `translateY(${-containerTop}px)`
     })
+
+    update()
   })
 
   /* --------------------------------- handle --------------------------------- */
   useImperativeHandle(ref, () => ({
-    update,
+    update: () => {},
   }))
 
   /* --------------------------------- effects -------------------------------- */
@@ -96,18 +102,31 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
             <div
               className={cn(
                 "absolute left-[70%] top-1/2 -translate-x-1/2 -translate-y-1/2",
-                "flex flex-col items-start"
+                "hidden flex-col items-start lg:flex"
               )}
             >
               {/* title */}
-              <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+              <div
+                className={cn(
+                  "lg:static",
+                  "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
+                  "mb-[1.5rem]",
+                  "overflow-hidden"
+                )}
+              >
                 <h2 className={cn("title", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
                   {project.title}
                 </h2>
               </div>
 
               {/* description */}
-              <div className="overflow-hidden">
+              <div
+                className={cn(
+                  "lg:static",
+                  "absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
+                  "overflow-hidden"
+                )}
+              >
                 <h4 className={cn("desc", "max-w-[40ch]", "text-[1.25rem]")}>{project.description}</h4>
               </div>
             </div>
@@ -119,11 +138,157 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
 })
 ProjectsSection.displayName = "ProjectsSection"
 
+const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
+  const { asPath } = useRouter()
+
+  /* ---------------------------------- refs ---------------------------------- */
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  const titles = useRef<{ [key: number]: HTMLElement }>({})
+  const descs = useRef<{ [key: number]: HTMLElement }>({})
+
+  // ui
+  const projectsUI = useRef(document.getElementById(projectsSectionId))
+  const projectsIndividualUI = useRef<HTMLElement[]>([])
+
+  /* -------------------------------- functions ------------------------------- */
+  const update = () => {
+    projectsIndividualUI.current.forEach((el, i) => {
+      const content = el as HTMLElement
+      const bounds = content.getBoundingClientRect()
+
+      const showScreenOffset = (Properties.viewportHeight - bounds.top) / Properties.viewportHeight
+      const hideScreenOffset = -bounds.bottom / Properties.viewportHeight
+
+      content.style.visibility = showScreenOffset > 0 && hideScreenOffset < 0 ? "visible" : "hidden"
+
+      // animate title
+      const titleShowRatio = MathUtils.fit(showScreenOffset, 1, 1.5, 0, 1, Ease.cubicOut)
+      const titleHideRatio = MathUtils.fit(hideScreenOffset, -0.8, -0.3, 0, 1, Ease.cubicIn)
+      if (titles.current[i]) {
+        titles.current[i].style.transform = `translateY(${(1 - titleShowRatio + titleHideRatio) * 100}%)`
+      }
+
+      // animate description
+      const descShowRatio = MathUtils.fit(showScreenOffset, 1.2, 1.7, 0, 1, Ease.cubicOut)
+      const descHideRatio = MathUtils.fit(hideScreenOffset, -0.6, -0.3, 0, 1, Ease.cubicIn)
+      if (descs.current[i]) {
+        descs.current[i].style.transform = `translateY(${(1 - descShowRatio + descHideRatio) * 100}%)`
+      }
+    })
+  }
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    update,
+  }))
+
+  /* --------------------------------- effects -------------------------------- */
+  useEffect(() => {
+    // get title + desc
+    Array.from(containerRef.current?.children ?? []).forEach((el, i) => {
+      const title = el.getElementsByClassName("title")[0] as HTMLElement
+      titles.current[i] = title
+
+      const desc = el.getElementsByClassName("desc")[0] as HTMLElement
+      descs.current[i] = desc
+    })
+
+    // get ui
+    projectsUI.current = document.getElementById(projectsSectionId)
+    projectsIndividualUI.current = []
+
+    Array.from(projectsUI.current?.children || []).forEach((_el) => {
+      const el = _el as HTMLElement
+
+      projectsIndividualUI.current.push(el)
+    })
+  }, [asPath])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div ref={containerRef}>
+      {Projects.map((project, i) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <div key={i} className="fixed left-0 top-0 h-[100dvh] w-[100vw]">
+          {/* title */}
+          <div
+            className={cn(
+              "lg:static",
+              "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2",
+              "mb-[1.5rem]",
+              "overflow-hidden"
+            )}
+          >
+            <h2 className={cn("title", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
+              {project.title}
+            </h2>
+          </div>
+
+          {/* description */}
+          <div
+            className={cn(
+              "lg:static",
+              "absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2",
+              "overflow-hidden"
+            )}
+          >
+            <h4 className={cn("desc", "max-w-[40ch]", "text-[1.25rem]")}>{project.description}</h4>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+})
+ProjectsMobileSection.displayName = "ProjectsMobileSection"
+
+const ProjectsContainerSection = forwardRef<ComponentRef>((_, ref) => {
+  /* ---------------------------------- refs ---------------------------------- */
+  const mobileRef = useRef<ComponentRef | null>(null)
+  const desktopRef = useRef<ComponentRef | null>(null)
+
+  /* --------------------------------- states --------------------------------- */
+  const [isMobile, setIsMobile] = useState(false)
+
+  /* --------------------------------- handle --------------------------------- */
+  useImperativeHandle(ref, () => ({
+    update: (delta) => {
+      mobileRef.current?.update(delta)
+      desktopRef.current?.update(delta)
+    },
+  }))
+
+  /* --------------------------------- effects -------------------------------- */
+  // resize
+  useEffect(() => {
+    const resize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    window.addEventListener("resize", resize)
+    resize()
+
+    return () => {
+      window.removeEventListener("resize", resize)
+    }
+  }, [])
+
+  /* ---------------------------------- main ---------------------------------- */
+  return (
+    <div>
+      <ProjectsSection ref={desktopRef} />
+      {isMobile && <ProjectsMobileSection ref={mobileRef} />}
+    </div>
+  )
+})
+ProjectsContainerSection.displayName = "ProjectsContainerSection"
+
 const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   /* ---------------------------------- refs ---------------------------------- */
   const containerRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
+  const titleMobileRef = useRef<HTMLDivElement | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
   const update = () => {
@@ -135,6 +300,11 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
     if (titleRef.current) {
       const offsetY = (1 - showRatio) * 100
       titleRef.current.style.transform = `translateY(${offsetY}%)`
+    }
+
+    if (titleMobileRef.current) {
+      const offsetY = (1 - showRatio) * 100
+      titleMobileRef.current.style.transform = `translateY(${offsetY}%)`
     }
 
     if (contentRef.current) {
@@ -159,20 +329,43 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} id={contactSectionId} className="pb-[250vh]">
-      <div
-        ref={contentRef}
-        className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}
-      >
+    <div>
+      {/* container */}
+      <div ref={containerRef} id={contactSectionId} className="pb-[250vh]">
         <div
-          className={cn("absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2", "flex flex-col items-start")}
+          ref={contentRef}
+          className={cn("relative min-h-[100dvh]", basePadding, "flex flex-col items-center justify-center")}
         >
-          {/* title */}
-          <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
-            <h2 ref={titleRef} className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}>
-              Contact
-            </h2>
+          <div
+            className={cn(
+              "absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2",
+              "hidden flex-col items-start lg:flex"
+            )}
+          >
+            {/* title */}
+            <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+              <h2
+                ref={titleRef}
+                className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+              >
+                Contact
+              </h2>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* mobile: content */}
+      {/* // ios lags in transform */}
+      <div className={cn("fixed left-1/2 top-[30dvh] -translate-x-1/2 -translate-y-1/2", "lg:hidden")}>
+        {/* title */}
+        <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
+          <h2
+            ref={titleMobileRef}
+            className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[100%]")}
+          >
+            Contact
+          </h2>
         </div>
       </div>
     </div>
@@ -219,7 +412,7 @@ export default function Home() {
         <div id={homeSectionId} className="pb-[100vh]" />
 
         {/* projects */}
-        <ProjectsSection ref={projectsRef} />
+        <ProjectsContainerSection ref={projectsRef} />
 
         {/* contact */}
         <ContactSection ref={contactRef} />

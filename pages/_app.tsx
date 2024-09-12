@@ -561,7 +561,7 @@ const Intro = () => {
     const finalTitleRect = document.getElementById(headerTextId)?.getBoundingClientRect()
 
     const titleHeight = titleRect?.height ?? 0
-    const titleTop = titleRect?.y ?? 0
+    const titleTop = titleRect?.top ?? 0
     const shrinkTitleHeight = shrinkTitleRect?.height ?? 0
     const finalTitleTop = finalTitleRect?.top ?? 0
 
@@ -626,7 +626,10 @@ const Intro = () => {
       <div className="relative flex">
         <h2
           ref={introTitleRef}
-          className={cn("mb-[0]", "whitespace-pre font-heading text-[4.25rem] font-medium uppercase leading-[1]")}
+          className={cn(
+            "mb-[0]",
+            "whitespace-pre font-heading text-[3rem] font-medium uppercase leading-[1] lg:text-[4.25rem]"
+          )}
         >
           <div className="overflow-hidden">Sujen Phea</div>
         </h2>
@@ -645,8 +648,11 @@ const Intro = () => {
       </div>
 
       {/* description */}
-      <h4 ref={introDescRef} className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase")}>
-        <div className="overflow-y-hidden">Creative Web Developer</div>
+      <h4
+        ref={introDescRef}
+        className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase", "pointer-events-none select-none")}
+      >
+        <div className="overflow-hidden">Creative Web Developer</div>
       </h4>
     </div>
   )
@@ -725,7 +731,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* navigation */}
-      <div className={cn("z-[1]", "fixed right-0 top-1/2 -translate-y-1/2", "flex flex-col")}>
+      <div className={cn("z-[1]", "fixed right-0 top-20 -translate-y-1/2 lg:top-1/2", "flex flex-col")}>
         {Navigations.map((nav, i) => (
           <Link
             href={nav.url}
@@ -764,7 +770,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* intro */}
-      <Intro />
+      {show && <Intro />}
 
       {/* main */}
       <ReactLenis root>
