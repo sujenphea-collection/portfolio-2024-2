@@ -94,22 +94,51 @@ type HomeExperienceProps = {
 /* -------------------------------------------------------------------------- */
 /*                                  constants                                 */
 /* -------------------------------------------------------------------------- */
-const CameraPositions = {
+const CameraPositions: {
+  [key: string]: {
+    mobile: { position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }
+    desktop: { position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }
+  }
+} = {
   intro: {
-    position: { x: -0.14895584310989712, y: 7.122215642812359, z: 15.57179759908457 },
-    rotation: { x: -0.42897346309670187, y: -0.008698803964670862, z: -0.003978580446027203 },
+    mobile: {
+      position: { x: -0.14895584310989712, y: 7.122215642812359, z: 15.57179759908457 },
+      rotation: { x: -0.42897346309670187, y: -0.008698803964670862, z: -0.003978580446027203 },
+    },
+    desktop: {
+      position: { x: -0.14895584310989712, y: 7.122215642812359, z: 15.57179759908457 },
+      rotation: { x: -0.42897346309670187, y: -0.008698803964670862, z: -0.003978580446027203 },
+    },
   },
   home: {
-    position: { x: -0.034203410629448434, y: 1.2267996112598016, z: 3.6977443998667225 },
-    rotation: { x: -0.21248504785893402, y: -0.012491264825962377, z: -0.002694810971032839 },
+    mobile: {
+      position: { x: -0.034203410629448434, y: 1.2267996112598016, z: 3.6977443998667225 },
+      rotation: { x: -0.21248504785893402, y: -0.012491264825962377, z: -0.002694810971032839 },
+    },
+    desktop: {
+      position: { x: -0.034203410629448434, y: 1.2267996112598016, z: 3.6977443998667225 },
+      rotation: { x: -0.21248504785893402, y: -0.012491264825962377, z: -0.002694810971032839 },
+    },
   },
   projects: {
-    position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
-    rotation: { x: 0, y: 0, z: 0 },
+    mobile: {
+      position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
+      rotation: { x: 0, y: 0, z: 0 },
+    },
+    desktop: {
+      position: { x: 0.7317772764108991, y: 1.0346202518946779, z: 0.8078307272048384 },
+      rotation: { x: 0, y: 0, z: 0 },
+    },
   },
   contact: {
-    position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 0.3801748125186579 },
-    rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
+    mobile: {
+      position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 2 },
+      rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
+    },
+    desktop: {
+      position: { x: -0.014080253455143561, y: 0.8656767589002491, z: 0.3801748125186579 },
+      rotation: { x: -0.09037316641352619, y: -0.0018096685636522448, z: -0.00016399208883666885 },
+    },
   },
 }
 
@@ -1327,23 +1356,32 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
     // get camera
     let cameraPos: Vector3Like
     let cameraRot: Vector3Like
+    const key = window.innerWidth < 768 ? "mobile" : "desktop"
     if (homeActive) {
-      cameraPos = MathUtils.mixVec3(CameraPositions.home.position, CameraPositions.projects.position, projectsShowRatio)
-      cameraRot = MathUtils.mixVec3(CameraPositions.home.rotation, CameraPositions.projects.rotation, projectsShowRatio)
+      cameraPos = MathUtils.mixVec3(
+        CameraPositions.home[key].position,
+        CameraPositions.projects[key].position,
+        projectsShowRatio
+      )
+      cameraRot = MathUtils.mixVec3(
+        CameraPositions.home[key].rotation,
+        CameraPositions.projects[key].rotation,
+        projectsShowRatio
+      )
     } else if (projectsActive) {
       cameraPos = MathUtils.mixVec3(
-        CameraPositions.projects.position,
-        CameraPositions.contact.position,
+        CameraPositions.projects[key].position,
+        CameraPositions.contact[key].position,
         contactShowRatio
       )
       cameraRot = MathUtils.mixVec3(
-        CameraPositions.projects.rotation,
-        CameraPositions.contact.rotation,
+        CameraPositions.projects[key].rotation,
+        CameraPositions.contact[key].rotation,
         contactShowRatio
       )
     } else {
-      cameraPos = CameraPositions.contact.position
-      cameraRot = CameraPositions.contact.rotation
+      cameraPos = CameraPositions.contact[key].position
+      cameraRot = CameraPositions.contact[key].rotation
     }
 
     // set camera
@@ -1361,11 +1399,13 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   }
 
   const reset = () => {
-    camera.current.position.copy(CameraPositions.intro.position)
+    const key = window.innerWidth < 768 ? "mobile" : "desktop"
+
+    camera.current.position.copy(CameraPositions.intro[key].position)
     camera.current.rotation.set(
-      CameraPositions.intro.rotation.x,
-      CameraPositions.intro.rotation.y,
-      CameraPositions.intro.rotation.z
+      CameraPositions.intro[key].rotation.x,
+      CameraPositions.intro[key].rotation.y,
+      CameraPositions.intro[key].rotation.z
     )
 
     if (dirtRef.current) dirtRef.current.params.opacity = 0
@@ -1375,6 +1415,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
   }
 
   const introIn = () => {
+    const key = window.innerWidth < 768 ? "mobile" : "desktop"
     gsap
       .timeline({
         onStart: () => {
@@ -1393,9 +1434,9 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       .to(
         camera.current.position,
         {
-          x: CameraPositions.home.position.x,
-          y: CameraPositions.home.position.y,
-          z: CameraPositions.home.position.z,
+          x: CameraPositions.home[key].position.x,
+          y: CameraPositions.home[key].position.y,
+          z: CameraPositions.home[key].position.z,
           duration: 1.5,
           ease: "power1.inOut",
         },
@@ -1404,9 +1445,9 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       .to(
         camera.current.rotation,
         {
-          x: CameraPositions.home.rotation.x,
-          y: CameraPositions.home.rotation.y,
-          z: CameraPositions.home.rotation.z,
+          x: CameraPositions.home[key].rotation.x,
+          y: CameraPositions.home[key].rotation.y,
+          z: CameraPositions.home[key].rotation.z,
           duration: 1.5,
           ease: "power1.inOut",
         },
