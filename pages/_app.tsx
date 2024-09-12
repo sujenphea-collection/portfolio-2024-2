@@ -561,7 +561,7 @@ const Intro = () => {
     const finalTitleRect = document.getElementById(headerTextId)?.getBoundingClientRect()
 
     const titleHeight = titleRect?.height ?? 0
-    const titleTop = titleRect?.y ?? 0
+    const titleTop = titleRect?.top ?? 0
     const shrinkTitleHeight = shrinkTitleRect?.height ?? 0
     const finalTitleTop = finalTitleRect?.top ?? 0
 
@@ -646,7 +646,7 @@ const Intro = () => {
 
       {/* description */}
       <h4 ref={introDescRef} className={cn("mb-[1.8rem] max-w-[40ch]", "text-[1.25rem] uppercase")}>
-        <div className="overflow-y-hidden">Creative Web Developer</div>
+        <div className="overflow-hidden">Creative Web Developer</div>
       </h4>
     </div>
   )
@@ -764,7 +764,7 @@ const Layout = (props: { children: ReactNode }) => {
       </div>
 
       {/* intro */}
-      <Intro />
+      {show && <Intro />}
 
       {/* main */}
       <ReactLenis root>
