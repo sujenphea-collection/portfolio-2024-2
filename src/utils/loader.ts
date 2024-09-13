@@ -172,7 +172,21 @@ export class Loader {
     video.addEventListener(
       "loadeddata",
       () => {
+        if (video.currentTime < 0.01) {
+          video.currentTime = 0.05
+        }
+
         video.addEventListener("timeupdate", load, { once: true })
+      },
+      { once: true }
+    )
+    // - load second time to get thumbnail for ios
+    video.addEventListener(
+      "loadedmetadata",
+      () => {
+        if (isSafari) {
+          video.load()
+        }
       },
       { once: true }
     )
@@ -182,6 +196,9 @@ export class Loader {
     // load + play
     video.src = item.url
     video.dataset.src = item.url
+    if (video.currentTime < 0.01) {
+      video.currentTime = 0.05
+    }
     video.load()
     video
       .play()
