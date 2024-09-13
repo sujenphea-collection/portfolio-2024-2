@@ -94,10 +94,10 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
 
   /* ---------------------------------- main ---------------------------------- */
   return (
-    <div ref={containerRef} id={projectsSectionId}>
+    <div ref={containerRef} id={projectsSectionId} className={cn("select-none")}>
       {Projects.map((project, i) => (
         // eslint-disable-next-line react/no-array-index-key
-        <div key={i} className="pb-[150vh]">
+        <div key={i} className={cn("pb-[150vh]")}>
           <div className={cn("relative min-h-[100vh]", basePadding, "flex flex-col items-center justify-center")}>
             <div
               className={cn(
@@ -160,6 +160,7 @@ const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
       const showScreenOffset = (Properties.viewportHeight - bounds.top) / Properties.viewportHeight
       const hideScreenOffset = -bounds.bottom / Properties.viewportHeight
 
+      content.style.pointerEvents = showScreenOffset > 0 && hideScreenOffset < 0 ? "auto" : "none"
       content.style.visibility = showScreenOffset > 0 && hideScreenOffset < 0 ? "visible" : "hidden"
 
       // animate title
@@ -288,6 +289,8 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
+
+  const mobileContainerRef = useRef<HTMLDivElement | null>(null)
   const titleMobileRef = useRef<HTMLDivElement | null>(null)
 
   /* -------------------------------- functions ------------------------------- */
@@ -295,6 +298,10 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
     const contactBounds = containerRef.current?.getBoundingClientRect()
     const contactTop = contactBounds?.top ?? 0
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+
+    if (mobileContainerRef.current) {
+      mobileContainerRef.current.style.pointerEvents = contactShowScreenOffset > 0 ? "auto" : "none"
+    }
 
     const showRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 2, 0, 1, Ease.cubicOut)
     if (titleRef.current) {
@@ -357,7 +364,10 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
 
       {/* mobile: content */}
       {/* // ios lags in transform */}
-      <div className={cn("fixed left-1/2 top-[30dvh] -translate-x-1/2 -translate-y-1/2", "lg:hidden")}>
+      <div
+        ref={mobileContainerRef}
+        className={cn("fixed left-1/2 top-[30dvh] -translate-x-1/2 -translate-y-1/2", "lg:hidden")}
+      >
         {/* title */}
         <div className={cn("mb-[1.5rem]", "overflow-hidden")}>
           <h2
