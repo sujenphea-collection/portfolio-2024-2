@@ -663,6 +663,7 @@ const Navigation = () => {
 
   /* ---------------------------------- atoms --------------------------------- */
   const [postAnimateIntroScene] = useAtom(postAnimateIntroSceneAtom)
+  const [transitioning] = useAtom(transitioningAtom)
 
   /* --------------------------------- effects -------------------------------- */
   // animate
@@ -671,10 +672,13 @@ const Navigation = () => {
       return
     }
 
-    gsap
-      .timeline()
-      .to(containerRef.current?.children ?? [], { translateX: 0, stagger: 0.2, duration: 1, ease: "expo.inOut" })
-  }, [postAnimateIntroScene])
+    gsap.timeline().to(containerRef.current?.children ?? [], {
+      translateX: transitioning ? "100%" : 0,
+      stagger: 0.2,
+      duration: 1,
+      ease: "expo.inOut",
+    })
+  }, [postAnimateIntroScene, transitioning])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
