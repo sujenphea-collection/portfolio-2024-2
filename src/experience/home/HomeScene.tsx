@@ -43,6 +43,7 @@ import {
 } from "three"
 import { clamp, lerp, randFloat } from "three/src/math/MathUtils"
 import { enableScrollAtom, postAnimateIntroSceneAtom } from "../../atoms/sceneAtoms"
+import { Projects } from "../../constants/projects"
 import {
   aboutIntroId,
   aboutSectionId,
@@ -745,6 +746,8 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
   const splitOffset = useRef(0)
   const projectHideY = useRef(0)
+  const currColor = useRef(new Color())
+  const prevColor = useRef(new Color())
 
   /* -------------------------------- functions ------------------------------- */
   const loadItems = (loader: Loader) => {
@@ -886,10 +889,12 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     })
 
     if (index <= projectTextures.current.length - 1) {
+      // set texture
       screenUniforms.current.u_texture.value =
         index <= 0 ? projectTextures.current[0] : projectTextures.current[index - 1]
       screenUniforms.current.u_texture2.value = projectTextures.current[index]
 
+      // get ratio
       const bounds = projectsIndividualUI.current[index]?.getBoundingClientRect()
       ratio = MathUtils.fit(bounds?.top || 0, 0, -(bounds?.height || 0) * 0.2, 0, 1)
     }
@@ -905,6 +910,31 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       1
     )
     screenUniforms.current.u_hideRatio.value = screenHideRatio
+
+    // set color
+    const prevIndex = index - 1 < 0 ? 0 : index - 1
+
+    if (screenHideRatio <= 0) {
+      // set color top
+      prevColor.current.set(Projects[prevIndex].colorTop)
+      currColor.current.set(Projects[index].colorTop)
+      floorUniforms.current.color_top.value.lerpColors(prevColor.current, currColor.current, ratio)
+
+      // set color bottom
+      prevColor.current.set(Projects[prevIndex].colorBottom)
+      currColor.current.set(Projects[index].colorBottom)
+      floorUniforms.current.color_bottom.value.lerpColors(prevColor.current, currColor.current, ratio)
+    } else {
+      // set color top
+      prevColor.current.set(Projects[index].colorTop)
+      currColor.current.set("#000000")
+      floorUniforms.current.color_top.value.lerpColors(prevColor.current, currColor.current, screenHideRatio)
+
+      // set color bottom
+      prevColor.current.set(Projects[index].colorBottom)
+      currColor.current.set("#000000")
+      floorUniforms.current.color_bottom.value.lerpColors(prevColor.current, currColor.current, screenHideRatio)
+    }
 
     // contact - move screen
     const contactTop = contactBounds?.top ?? 0
