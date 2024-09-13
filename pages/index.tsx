@@ -1,6 +1,7 @@
 import { useLenis } from "lenis/dist/lenis-react"
 import { useRouter } from "next/router"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { Projects } from "../src/constants/projects"
 import { basePadding, contactSectionId, homeSectionId, projectsSectionId } from "../src/constants/uiConstants"
 import Ease from "../src/utils/ease"
 import { MathUtils } from "../src/utils/math"
@@ -14,15 +15,6 @@ type ComponentRef = {
   update: (delta: number) => void
   resize?: (width: number, height: number) => void
 }
-
-/* -------------------------------------------------------------------------- */
-/*                                  constans                                  */
-/* -------------------------------------------------------------------------- */
-const Projects = [
-  { title: "Project 1", description: "Description", link: "https://google.com" },
-  { title: "Project 2", description: "Description", link: "https://google.com" },
-  { title: "Project 3", description: "Description", link: "https://google.com" },
-]
 
 /* -------------------------------------------------------------------------- */
 /*                                 components                                 */
