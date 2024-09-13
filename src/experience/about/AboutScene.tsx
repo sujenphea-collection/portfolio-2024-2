@@ -2,7 +2,7 @@ import { createPortal, useFrame } from "@react-three/fiber"
 import { useAtom } from "jotai"
 import { forwardRef, MutableRefObject, useEffect, useImperativeHandle, useRef } from "react"
 import { PerspectiveCamera, Scene } from "three"
-import { postAnimateInSceneAtom } from "../../atoms/sceneAtoms"
+import { postAnimateIntroSceneAtom } from "../../atoms/sceneAtoms"
 import { SceneHandle } from "../types/SceneHandle"
 
 export const AboutScene = forwardRef<SceneHandle, { introIn: MutableRefObject<boolean> }>((props, ref) => {
@@ -13,7 +13,7 @@ export const AboutScene = forwardRef<SceneHandle, { introIn: MutableRefObject<bo
   const needsIntro = useRef(true)
 
   /* ---------------------------------- atoms --------------------------------- */
-  const [, setPostAnimateInScene] = useAtom(postAnimateInSceneAtom)
+  const [, setPostAnimateIntroScene] = useAtom(postAnimateIntroSceneAtom)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -31,7 +31,7 @@ export const AboutScene = forwardRef<SceneHandle, { introIn: MutableRefObject<bo
   /* ---------------------------------- tick ---------------------------------- */
   useFrame(() => {
     if (needsIntro.current && props.introIn.current) {
-      setPostAnimateInScene(true)
+      setPostAnimateIntroScene(true)
       needsIntro.current = false
     }
   })

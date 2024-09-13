@@ -2,7 +2,7 @@ import gsap from "gsap"
 import { useAtom } from "jotai"
 import { useEffect, useRef } from "react"
 import SplitType from "split-type"
-import { animateInSceneAtom } from "../src/atoms/sceneAtoms"
+import { animateIntroSceneAtom } from "../src/atoms/sceneAtoms"
 import { cn } from "../src/utils/utils"
 
 export default function About() {
@@ -16,7 +16,7 @@ export default function About() {
   const splittedDescriptionRef = useRef<SplitType | null>(null)
 
   /* ---------------------------------- atoms --------------------------------- */
-  const [animateIn] = useAtom(animateInSceneAtom)
+  const [animateIntroScene] = useAtom(animateIntroSceneAtom)
 
   /* --------------------------------- effects -------------------------------- */
   // setup text
@@ -43,7 +43,7 @@ export default function About() {
 
   // animate
   useEffect(() => {
-    if (!animateIn) {
+    if (!animateIntroScene) {
       return
     }
 
@@ -71,7 +71,7 @@ export default function About() {
         "<0.1"
       )
       .to(lineBottomRef.current, { scaleX: 1, duration: 1 })
-  }, [animateIn])
+  }, [animateIntroScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (

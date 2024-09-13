@@ -12,7 +12,13 @@ import { useRouter } from "next/router"
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import SplitType from "split-type"
 import { Camera, LinearSRGBColorSpace, NoToneMapping, PerspectiveCamera, Scene, ShaderChunk } from "three"
-import { animateInSceneAtom, animateIntroAtom, enableScrollAtom, postAnimateInSceneAtom } from "../src/atoms/sceneAtoms"
+import {
+  animateIntroAtom,
+  animateIntroSceneAtom,
+  enableScrollAtom,
+  postAnimateIntroSceneAtom,
+  transitioningAtom,
+} from "../src/atoms/sceneAtoms"
 import { Navigations } from "../src/constants/uiConstants"
 import { AboutScene } from "../src/experience/about/AboutScene"
 import { FboHelper } from "../src/experience/FBOHelper"
@@ -133,8 +139,9 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   /* ---------------------------------- atom ---------------------------------- */
   const [, setAnimateIntro] = useAtom(animateIntroAtom)
-  const [animateInScene] = useAtom(animateInSceneAtom)
+  const [animateIntroScene] = useAtom(animateIntroSceneAtom)
   const [, setEnableScroll] = useAtom(enableScrollAtom)
+  const [, setTransitioning] = useAtom(transitioningAtom)
 
   /* -------------------------------- functions ------------------------------- */
   const resize = () => {
@@ -164,6 +171,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
           },
           onComplete: () => {
             transitioning.current = false
+            setTransitioning(false)
             setEnableScroll(true)
           },
         })
@@ -192,7 +200,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
           "+=0.1"
         )
     },
-    [setEnableScroll]
+    [setEnableScroll, setTransitioning]
   )
 
   const fromAboutTransition = useCallback(() => {
@@ -227,6 +235,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
           // post update
           transitioning.current = false
           introIn.current = true
+          setTransitioning(false)
         },
       })
       .fromTo(
@@ -235,13 +244,17 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
         { value: 0, duration: 1.5, ease: "power1.inOut" },
         "<"
       )
-  }, [])
+  }, [setTransitioning])
 
   const onRouteUpdated = () => {
     if (asPath === "/about") {
       toAboutTransition(prevRoute.current || "")
     } else if (prevRoute.current === "/about") {
       fromAboutTransition()
+    }
+    // intro
+    else {
+      setTransitioning(false)
     }
 
     routesToUpdate.current.push(asPath)
@@ -341,6 +354,7 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
   useEffect(() => {
     introIn.current = false
     setEnableScroll(false)
+    setTransitioning(true)
 
     if (transitioning.current) {
       needsTransition.current = true
@@ -362,10 +376,10 @@ const SceneRender = (props: { loader: Loader; preinitComplete: () => void; show:
 
   // post UI intro - animate in scene
   useEffect(() => {
-    if (animateInScene) {
+    if (animateIntroScene) {
       introIn.current = true
     }
-  }, [animateInScene])
+  }, [animateIntroScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -508,7 +522,7 @@ const Intro = () => {
 
   /* ---------------------------------- atoms --------------------------------- */
   const [animateIntro] = useAtom(animateIntroAtom)
-  const [, setAnimateInScene] = useAtom(animateInSceneAtom)
+  const [, setAnimateIntroScene] = useAtom(animateIntroSceneAtom)
 
   /* --------------------------------- effects -------------------------------- */
   // setup text
@@ -575,7 +589,7 @@ const Intro = () => {
           "<"
         )
         .add(() => {
-          setAnimateInScene(true)
+          setAnimateIntroScene(true)
         }, "<")
         .to(
           introTitleRef.current,
@@ -593,7 +607,7 @@ const Intro = () => {
         .to(introTitleRef.current, { autoAlpha: 0, duration: 2 }, ">")
         .to(`#${headerTextId}`, { autoAlpha: 1, duration: 2 }, "<")
     }
-  }, [animateIntro, setAnimateInScene])
+  }, [animateIntro, setAnimateIntroScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
@@ -648,19 +662,19 @@ const Navigation = () => {
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   /* ---------------------------------- atoms --------------------------------- */
-  const [postAnimateInScene] = useAtom(postAnimateInSceneAtom)
+  const [postAnimateIntroScene] = useAtom(postAnimateIntroSceneAtom)
 
   /* --------------------------------- effects -------------------------------- */
   // animate
   useEffect(() => {
-    if (!postAnimateInScene) {
+    if (!postAnimateIntroScene) {
       return
     }
 
     gsap
       .timeline()
       .to(containerRef.current?.children ?? [], { translateX: 0, stagger: 0.2, duration: 1, ease: "expo.inOut" })
-  }, [postAnimateInScene])
+  }, [postAnimateIntroScene])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
