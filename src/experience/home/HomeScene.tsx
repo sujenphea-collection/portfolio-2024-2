@@ -1448,9 +1448,24 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           needsIntro.current = false
           setEnableScroll(true)
           setPostAnimateIntroScene(true)
+
+          gsap
+            .timeline()
+            .fromTo(
+              [groundRef.current?.params],
+              { opacity: 0 },
+              { opacity: 1, duration: 1, ease: "power1.inOut" },
+              ">-0.1"
+            )
+            .fromTo(
+              [particlesRef.current?.params],
+              { opacity: 0 },
+              { opacity: 1, duration: 2, ease: "power1.inOut" },
+              "<"
+            )
         },
       })
-      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 3, ease: "power1.in" })
+      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "none" })
       .to(
         camera.current.position,
         {
@@ -1474,8 +1489,6 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         "<"
       )
       .set([dirtRef.current?.params], { opacity: 1 }, "<")
-      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
-      .fromTo([particlesRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.inOut" }, "<")
   }
 
   /* --------------------------------- handle --------------------------------- */
