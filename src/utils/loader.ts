@@ -122,15 +122,16 @@ export class Loader {
     video.playsInline = true
     video.autoplay = true
 
+    // variables
     let width = 0
     let height = 0
 
+    // callbacks
     const load = () => {
       const texture = new VideoTexture(video)
       this.gl?.initTexture(texture)
 
-      video.pause()
-      video.load()
+      video.currentTime = 0.05
 
       texture.userData.video = video
       texture.userData.width = video.videoWidth > 0 ? video.videoWidth : width
@@ -141,26 +142,58 @@ export class Loader {
       this.onItemLoad(item)
     }
 
-    video.addEventListener("loadeddata", () => video.addEventListener("timeupdate", load, { once: true }), {
-      once: true,
-    })
-
-    video.onplaying = () => {
+    const onPlay = () => {
       width = video.videoWidth
       height = video.videoHeight
     }
 
-    video.addEventListener("error", load, { once: true })
+    // safari - play on window click
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    if (isSafari) {
+      video.addEventListener("suspend", () => {
+        window.addEventListener(
+          "click",
+          () => {
+            if (video.currentTime < 0.01) {
+              video.currentTime = 0.05
+            }
+            video.play()
+          },
+          { once: !0 }
+        )
 
+        // eslint-disable-next-line no-param-reassign
+        item.content = video
+        this.onItemLoad(item)
+      })
+    }
+
+    // event listeners
+    video.addEventListener(
+      "loadeddata",
+      () => {
+        video.addEventListener("timeupdate", load, { once: true })
+      },
+      { once: true }
+    )
+    video.addEventListener("error", load, { once: true })
+    video.onplaying = onPlay
+
+    // load + play
     video.src = item.url
     video.dataset.src = item.url
     video.load()
-    video.play().catch((o) => {
-      // eslint-disable-next-line no-console
-      console.error(o)
+    video
+      .play()
+      .then(() => {
+        load()
+      })
+      .catch((o) => {
+        // eslint-disable-next-line no-console
+        console.error(o)
 
-      load()
-    })
+        load()
+      })
   }
 
   // gltf + glb

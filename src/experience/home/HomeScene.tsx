@@ -814,8 +814,6 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     loader.add("/projects/balance.mp4", ItemType.VideoTexture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
-        tex.userData.video.play()
-        tex.userData.video.loop = true
 
         screenUniforms.current.u_texture.value = tex
         projectTextures.current[0] = tex
