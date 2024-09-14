@@ -1444,11 +1444,6 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           if (stageRef.current) stageRef.current.params.opacity = 0
         },
         onComplete: () => {
-          introComplete.current = true
-          needsIntro.current = false
-          setEnableScroll(true)
-          setPostAnimateIntroScene(true)
-
           gsap
             .timeline()
             .fromTo(
@@ -1465,7 +1460,6 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
             )
         },
       })
-      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "none" })
       .to(
         camera.current.position,
         {
@@ -1488,6 +1482,14 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
         },
         "<"
       )
+      .add(() => {
+        setEnableScroll(true)
+        introComplete.current = true
+        needsIntro.current = false
+
+        setPostAnimateIntroScene(true)
+      })
+      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 5 }, "-=0.5")
       .set([dirtRef.current?.params], { opacity: 1 }, "<")
   }
 
