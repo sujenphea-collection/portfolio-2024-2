@@ -703,8 +703,8 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_showRatio: { value: 1 },
 
     // color
-    color_top: { value: new Color(0xedf2fb) },
-    color_bottom: { value: new Color(0x001845) },
+    color_top: { value: new Color(0x000000) },
+    color_bottom: { value: new Color(0x000000) },
 
     // noise
     u_noiseTexture: { value: null as Texture | null },
@@ -876,8 +876,17 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     const contactBounds = contactUI.current?.getBoundingClientRect()
 
     // show ratio
-    screenUniforms.current.u_showRatio.value = params.current.opacity
-    floorUniforms.current.u_showRatio.value = params.current.opacity + 0.2
+    floorUniforms.current.u_showRatio.value = params.current.opacity
+
+    // black screen
+    const screenHideRatio = MathUtils.fit(
+      (window.scrollY - projectHideY.current) / Properties.viewportHeight,
+      -1,
+      0,
+      0,
+      1
+    )
+    screenUniforms.current.u_hideRatio.value = screenHideRatio + (1 - params.current.opacity)
 
     // mix ratio
     let ratio = 0
@@ -901,27 +910,17 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 
     screenUniforms.current.u_mixRatio.value = ratio
 
-    // black screen
-    const screenHideRatio = MathUtils.fit(
-      (window.scrollY - projectHideY.current) / Properties.viewportHeight,
-      -1,
-      0,
-      0,
-      1
-    )
-    screenUniforms.current.u_hideRatio.value = screenHideRatio
-
-    // set color
-    const prevIndex = index - 1 < 0 ? 0 : index - 1
+    // set stage color
+    const prevIndex = index - 1
 
     if (screenHideRatio <= 0) {
       // set color top
-      prevColor.current.set(Projects[prevIndex].colorTop)
+      prevColor.current.set(prevIndex < 0 ? "#999999" : Projects[prevIndex].colorTop)
       currColor.current.set(Projects[index].colorTop)
       floorUniforms.current.color_top.value.lerpColors(prevColor.current, currColor.current, ratio)
 
       // set color bottom
-      prevColor.current.set(Projects[prevIndex].colorBottom)
+      prevColor.current.set(prevIndex < 0 ? "#000000" : Projects[prevIndex].colorBottom)
       currColor.current.set(Projects[index].colorBottom)
       floorUniforms.current.color_bottom.value.lerpColors(prevColor.current, currColor.current, ratio)
     } else {
@@ -1489,7 +1488,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
 
         setPostAnimateIntroScene(true)
       })
-      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 5 }, "-=0.5")
+      .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 5, ease: "power1.out" }, "-=0.5")
       .set([dirtRef.current?.params], { opacity: 1 }, "<")
   }
 

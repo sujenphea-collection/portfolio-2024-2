@@ -108,7 +108,7 @@ void main() {
   color -= gridColor;
 
   // alpha
-  float smoothRatio = u_showRatio -
+  float smoothRatio = (u_showRatio + 0.2) -
                       v_uv.y * 0.2 - 
                       (1.0 - color.r) * 0.4;
   alpha = smoothstep(0.0, 0.1, smoothRatio);
