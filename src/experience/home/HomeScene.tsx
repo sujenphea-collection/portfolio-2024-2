@@ -1442,22 +1442,6 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
           if (groundRef.current) groundRef.current.params.opacity = 0
           if (stageRef.current) stageRef.current.params.opacity = 0
         },
-        onComplete: () => {
-          gsap
-            .timeline()
-            .fromTo(
-              [groundRef.current?.params],
-              { opacity: 0 },
-              { opacity: 1, duration: 1, ease: "power1.inOut" },
-              ">-0.1"
-            )
-            .fromTo(
-              [particlesRef.current?.params],
-              { opacity: 0 },
-              { opacity: 1, duration: 2, ease: "power1.inOut" },
-              "<"
-            )
-        },
       })
       .to(
         camera.current.position,
@@ -1490,6 +1474,8 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       })
       .fromTo([stageRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 5, ease: "power1.out" }, "-=0.5")
       .set([dirtRef.current?.params], { opacity: 1 }, "<")
+      .fromTo([groundRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 1, ease: "power1.inOut" }, ">-0.1")
+      .fromTo([particlesRef.current?.params], { opacity: 0 }, { opacity: 1, duration: 2, ease: "power1.inOut" }, "<")
   }
 
   /* --------------------------------- handle --------------------------------- */
