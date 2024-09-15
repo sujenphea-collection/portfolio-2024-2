@@ -47,7 +47,7 @@ void main() {
   float alpha = 1.0;
 
   float noise = texture2D(u_maskTexture, v_uv2).g;
-  
+
   // add light
   vec3 light = vec3(0.0);
 
@@ -66,12 +66,27 @@ void main() {
 
   // add noise
   color *= crange(1.0 - (noise * 4.0), 0.0, 1.0, 0.0, 0.8);
-  
+
   // get shadow alpha
   vec2 shadowUv = (v_uv2 - 0.5) * u_scale + 0.5;
   vec3 shadows = texture2D(u_shadowTexture, shadowUv).rgb;
-  float shadowAlpha = smoothstep(0.1, 1.0, shadows.b) * u_shadowShowRatio;
-  color += vec3(shadowAlpha);
+  float shadowAlpha = smoothstep(0.1, 1.0, shadows.b);
+  
+  // - animate left y 
+  float mappedY = crange(1.0 - v_uv2.y, 0.4, 0.54, 0.0, 1.0);
+  float yLeftRatio = step(mappedY, u_shadowShowRatio * 2.0) * step(v_uv2.x, 0.5); // left half
+
+  // - animate right y
+  mappedY = crange(v_uv2.y, 0.46, 0.6, 0.0, 1.0);
+  float yAlpha = clamp(u_shadowShowRatio * 2.0 - 1.0, 0.0, 1.0);
+  float yRightRatio = step(mappedY, yAlpha) * (1.0 - step(v_uv2.x, 0.5)); // right half
+
+  // - animate x
+  float mappedX = crange(v_uv2.x, 0.44, 0.56, 0.0, 1.0);
+  float xRatio = step(mappedX, u_shadowShowRatio);
+
+  // - add shadow
+  color += vec3(shadowAlpha * xRatio * yLeftRatio + shadowAlpha * xRatio * yRightRatio);
 
   // apply color
   gl_FragColor = vec4(color, alpha);
