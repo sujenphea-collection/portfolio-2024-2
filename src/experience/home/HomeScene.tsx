@@ -429,6 +429,8 @@ const Dirt = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
 Dirt.displayName = "Dirt"
 
 const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
+  const { asPath } = useRouter()
+
   /* ---------------------------------- refs ---------------------------------- */
   const params = useRef({ opacity: 1 })
 
@@ -473,9 +475,48 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     ...UniformsLib.fog,
   })
 
+  // ui
+  const projectsUI = useRef(document.getElementById(projectsSectionId))
+  const projectsIndividualUI = useRef<HTMLElement[]>([])
+
+  // params
+  const currColor = useRef(new Color())
+  const prevColor = useRef(new Color())
+
   /* ---------------------------------- tick ---------------------------------- */
   useFrame(() => {
-    groundUniforms.current.u_shadowShowRatio.value = params.current.opacity
+    // mix ratio
+    let ratio = 0
+    let index = 0
+    projectsIndividualUI.current.forEach((el, i) => {
+      if (window.scrollY > el.offsetTop) {
+        index = i
+      }
+    })
+
+    // get ratio
+    const bounds = projectsIndividualUI.current[index]?.getBoundingClientRect()
+    ratio = MathUtils.fit(bounds?.top || 0, 0, -(bounds?.height || 0) * 0.2, 0, 1)
+
+    // set light show ratio
+    const lightHideRatio = MathUtils.fit(bounds?.top || 0, 0, -(bounds?.height || 0) * 0.1, 1, 0)
+    const lightShowRatio = MathUtils.fit(
+      bounds?.top || 0,
+      -(bounds?.height || 0) * 0.1,
+      -(bounds?.height || 0) * 0.2,
+      0,
+      1
+    )
+
+    groundUniforms.current.u_stageLightRatio.value = params.current.opacity * (lightHideRatio + lightShowRatio)
+
+    // set stage color
+    const prevIndex = index - 1
+
+    // set color top
+    prevColor.current.set(prevIndex < 0 ? "#ffffff" : Projects[prevIndex].colorTop)
+    currColor.current.set(Projects[index].colorTop)
+    groundUniforms.current.u_stageLightColor.value.lerpColors(prevColor.current, currColor.current, ratio)
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -661,6 +702,19 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     },
     params: params.current,
   }))
+
+  /* --------------------------------- effects -------------------------------- */
+  // setup UI
+  useEffect(() => {
+    projectsUI.current = document.getElementById(projectsSectionId)
+    projectsIndividualUI.current = []
+
+    Array.from(projectsUI.current?.children || []).forEach((_el) => {
+      const el = _el as HTMLElement
+
+      projectsIndividualUI.current.push(el)
+    })
+  }, [asPath])
 
   /* ---------------------------------- main ---------------------------------- */
   return (
