@@ -9,7 +9,8 @@ uniform sampler2D u_maskTexture;
 uniform sampler2D u_mroTexture;
 
 uniform float u_scale; // scales uv for baked texture
-uniform float u_shadowShowRatio;
+uniform float u_stageLightRatio;
+uniform vec3 u_stageLightColor;
 
 varying vec4 v_uv;
 varying vec2 v_uv2;
@@ -57,7 +58,7 @@ void main() {
   float lightIntensity = 0.3;
   light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 20.0, 0.0, 0.0);
 
-  color += light * (clamp(u_shadowShowRatio, 0.4, 1.0));
+  color += light * (clamp(u_stageLightRatio, 0.4, 1.0));
 
   // get reflection
   vec4 uvOffset = vec4(noise * 0.2, 0.0, 0.0, noise * 0.2);
@@ -67,26 +68,27 @@ void main() {
   // add noise
   color *= crange(1.0 - (noise * 4.0), 0.0, 1.0, 0.0, 0.8);
 
-  // get shadow alpha
-  vec2 shadowUv = (v_uv2 - 0.5) * u_scale + 0.5;
-  vec3 shadows = texture2D(u_shadowTexture, shadowUv).rgb;
-  float shadowAlpha = smoothstep(0.1, 1.0, shadows.b);
+  // get stage light alpha
+  vec2 stageLightUV = (v_uv2 - 0.5) * u_scale + 0.5;
+  vec3 stageLight = texture2D(u_shadowTexture, stageLightUV).rgb;
+  float stageLightAlpha = smoothstep(0.1, 1.0, stageLight.b);
   
   // - animate left y 
   float mappedY = crange(1.0 - v_uv2.y, 0.4, 0.54, 0.0, 1.0);
-  float yLeftRatio = step(mappedY, u_shadowShowRatio * 2.0) * step(v_uv2.x, 0.5); // left half
+  float yLeftRatio = step(mappedY, u_stageLightRatio * 2.0) * step(v_uv2.x, 0.5); // left half
 
   // - animate right y
   mappedY = crange(v_uv2.y, 0.46, 0.6, 0.0, 1.0);
-  float yAlpha = clamp(u_shadowShowRatio * 2.0 - 1.0, 0.0, 1.0);
+  float yAlpha = clamp(u_stageLightRatio * 2.0 - 1.0, 0.0, 1.0);
   float yRightRatio = step(mappedY, yAlpha) * (1.0 - step(v_uv2.x, 0.5)); // right half
 
   // - animate x
   float mappedX = crange(v_uv2.x, 0.44, 0.56, 0.0, 1.0);
-  float xRatio = step(mappedX, u_shadowShowRatio);
+  float xRatio = step(mappedX, u_stageLightRatio);
 
-  // - add shadow
-  color += vec3(shadowAlpha * xRatio * yLeftRatio + shadowAlpha * xRatio * yRightRatio);
+  // - add stage light
+  float stageLightRatio = stageLightAlpha * xRatio * yLeftRatio + stageLightAlpha * xRatio * yRightRatio;
+  color += u_stageLightColor * stageLightRatio;
 
   // apply color
   gl_FragColor = vec4(color, alpha);

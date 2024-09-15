@@ -464,7 +464,8 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
 
     u_scale: { value: 3.0 },
-    u_shadowShowRatio: { value: 1 },
+    u_stageLightRatio: { value: 1 },
+    u_stageLightColor: { value: new Color("#ffffff") },
 
     u_shadowTexture: { value: null as Texture | null },
     u_maskTexture: { value: null as Texture | null },
