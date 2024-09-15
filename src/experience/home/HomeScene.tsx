@@ -480,6 +480,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const projectsIndividualUI = useRef<HTMLElement[]>([])
 
   // params
+  const projectHideY = useRef(0)
   const currColor = useRef(new Color())
   const prevColor = useRef(new Color())
 
@@ -513,10 +514,23 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     // set stage color
     const prevIndex = index - 1
 
-    // set color top
-    prevColor.current.set(prevIndex < 0 ? "#ffffff" : Projects[prevIndex].colorTop)
-    currColor.current.set(Projects[index].colorTop)
-    groundUniforms.current.u_stageLightColor.value.lerpColors(prevColor.current, currColor.current, ratio)
+    // set color
+    const screenHideRatio = MathUtils.fit(
+      (window.scrollY - projectHideY.current) / Properties.viewportHeight,
+      -1,
+      0,
+      0,
+      1
+    )
+    if (screenHideRatio <= 0) {
+      prevColor.current.set(prevIndex < 0 ? "#ffffff" : Projects[prevIndex].colorTop)
+      currColor.current.set(Projects[index].colorTop)
+      groundUniforms.current.u_stageLightColor.value.lerpColors(prevColor.current, currColor.current, ratio)
+    } else {
+      prevColor.current.set(Projects[index].colorTop)
+      currColor.current.set("#ffffff")
+      groundUniforms.current.u_stageLightColor.value.lerpColors(prevColor.current, currColor.current, ratio)
+    }
   })
 
   /* -------------------------------- functions ------------------------------- */
@@ -713,6 +727,8 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       const el = _el as HTMLElement
 
       projectsIndividualUI.current.push(el)
+
+      projectHideY.current = Math.max(projectHideY.current, el.offsetTop + el.offsetHeight)
     })
   }, [asPath])
 
