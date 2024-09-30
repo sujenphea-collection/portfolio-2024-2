@@ -1,6 +1,8 @@
 import { useLenis } from "lenis/dist/lenis-react"
+import Link from "next/link"
 import { useRouter } from "next/router"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { Icon } from "../src/components/Icon"
 import { Projects } from "../src/constants/projects"
 import { basePadding, contactSectionId, homeSectionId, projectsSectionId } from "../src/constants/uiConstants"
 import Ease from "../src/utils/ease"
@@ -98,23 +100,41 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
               )}
             >
               {/* title */}
-              <div
+              <Link
+                href={project.link}
+                target="_blank"
                 className={cn(
                   "lg:static",
                   "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
-
-                  "overflow-hidden"
+                  "group overflow-hidden"
                 )}
               >
-                <h2 className={cn("title", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
+                {/* underline */}
+                <div
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 h-px",
+                    "border-b-4 border-contentColor",
+                    "origin-left scale-x-0 group-hover:scale-x-100",
+                    "transition-transform duration-500 ease-in-out will-change-transform"
+                  )}
+                />
+
+                {/* content */}
+                <h2
+                  className={cn(
+                    "title",
+                    "relative whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]"
+                  )}
+                >
                   {project.title}
                 </h2>
-              </div>
+              </Link>
 
               {/* description */}
               <div
                 className={cn(
                   "lg:static",
+                  "mt-[0.5rem]",
                   "absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
                   "overflow-hidden"
                 )}
@@ -205,7 +225,9 @@ const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
         // eslint-disable-next-line react/no-array-index-key
         <div key={i} className="fixed left-0 top-0 h-[100dvh] w-[100vw]">
           {/* title */}
-          <div
+          <Link
+            href={project.link}
+            target="_blank"
             className={cn(
               "lg:static",
               "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2",
@@ -213,10 +235,15 @@ const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
               "overflow-hidden"
             )}
           >
-            <h2 className={cn("title", "whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
-              {project.title}
-            </h2>
-          </div>
+            <div className={cn("title", "flex")}>
+              <h2 className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
+                {project.title}
+              </h2>
+
+              {/* arrow */}
+              <Icon type="LeftArrow" className={cn("h-8 w-8", "-rotate-45")} />
+            </div>
+          </Link>
 
           {/* description */}
           <div
