@@ -162,8 +162,6 @@ export class Loader {
           { once: !0 }
         )
 
-        // eslint-disable-next-line no-param-reassign
-        item.content = video
         this.onItemLoad(item)
       })
     }

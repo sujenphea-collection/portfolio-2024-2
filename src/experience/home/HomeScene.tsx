@@ -885,24 +885,29 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       },
     })
 
-    loader.add("/projects/balance.mp4", ItemType.VideoTexture, {
-      onLoad: (_tex) => {
-        const tex = _tex as Texture
+    Projects.forEach((project, i) => {
+      if (project.imageUrl) {
+        loader.add(project.imageUrl, ItemType.Texture, {
+          onLoad: (_tex) => {
+            const tex = _tex as Texture
+            tex.flipY = true
 
-        screenUniforms.current.u_texture.value = tex
-        projectTextures.current[0] = tex
-        projectTextures.current[2] = tex
-      },
-    })
+            screenUniforms.current.u_texture.value = tex
+            projectTextures.current[i] = tex
+          },
+        })
+      }
 
-    loader.add("/projects/project2.png", ItemType.Texture, {
-      onLoad: (_tex) => {
-        const tex = _tex as Texture
-        tex.flipY = true
+      if (project.videoUrl) {
+        loader.add(project.videoUrl, ItemType.VideoTexture, {
+          onLoad: (_tex) => {
+            const tex = _tex as Texture
 
-        screenUniforms.current.u_texture2.value = tex
-        projectTextures.current[1] = tex
-      },
+            screenUniforms.current.u_texture.value = tex
+            projectTextures.current[i] = tex
+          },
+        })
+      }
     })
 
     loader.add("/textures/transition.jpg", ItemType.Texture, {
