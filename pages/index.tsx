@@ -102,7 +102,7 @@ const ProjectsSection = forwardRef<ComponentRef>((_, ref) => {
                 className={cn(
                   "lg:static",
                   "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0",
-                  "mb-[1.5rem]",
+
                   "overflow-hidden"
                 )}
               >

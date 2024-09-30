@@ -1,7 +1,8 @@
 export const Projects = [
   {
     title: "Content Shaker",
-    description: "Description",
+    description:
+      "An experiment with react-three-rapier and window drag movement, exploring physics-based interactions.",
     link: "https://content-shaker.vercel.app",
     colorTop: "#edfbf4",
     colorBottom: "#004510",
@@ -9,7 +10,7 @@ export const Projects = [
   },
   {
     title: "Terrain",
-    description: "Description",
+    description: "Infinitely generated terrain using Perlin noise.",
     link: "https://terrain-olive.vercel.app",
     colorTop: "#1a2fed",
     colorBottom: "#585a70",
@@ -17,7 +18,8 @@ export const Projects = [
   },
   {
     title: "Gallery",
-    description: "Description",
+    description:
+      "An endlessly rotating carousel gallery displaying a curated selection of images, offering viewers a dynamic and immersive visual experience.",
     link: "https://galleria-navy.vercel.app",
     colorTop: "#909091",
     colorBottom: "#000000",
@@ -25,7 +27,8 @@ export const Projects = [
   },
   {
     title: "Balance",
-    description: "Description",
+    description:
+      "An experiment in simulating the behavior and dynamics of water, exploring realistic fluid motion and interactions.",
     link: "https://libra-black.vercel.app",
     colorTop: "#edf2fb",
     colorBottom: "#001845",
