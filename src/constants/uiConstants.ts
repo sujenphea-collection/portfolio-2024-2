@@ -13,8 +13,8 @@ export const contactSectionId = "contactSectionId"
 export const basePadding = "px-[max(3.5vw,40px)] py-[clamp(30px,2.4vw,50px)]"
 
 // url
-export const xURL = "https://x.com"
-export const githubURL = "https://github.com"
+export const xURL = "https://x.com/sujen_p"
+export const githubURL = "https://github.com/sujenphea"
 
 // navigations
 export const Navigations = [
