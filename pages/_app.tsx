@@ -784,6 +784,17 @@ const Layout = (props: { children: ReactNode }) => {
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="http://sujen.co/images/preview.png" />
+        <meta name="twitter:creator" content="@sujen_p" />
+
+        <meta property="og:title" content="Sujen Phea's Portfolio" />
+        <meta property="og:description" content="A portfolio as a Creative Web Developer" />
+        <meta property="og:image" content="http://sujen.co/images/preview.png" />
+        <meta property="og:url" content="http://sujen.co" />
+        <meta property="og:logo" content="http://sujen.co/favicon-32x32.png" />
+        <meta property="og:type" content="website" />
       </Head>
 
       {/* loader */}
