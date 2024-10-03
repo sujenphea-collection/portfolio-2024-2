@@ -232,11 +232,11 @@ const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
               "lg:static",
               "absolute left-1/2 top-[20%] -translate-x-1/2 -translate-y-1/2",
               "mb-[1.5rem]",
-              "overflow-hidden"
+              "select-none overflow-hidden"
             )}
           >
             <div className={cn("title", "flex")}>
-              <h2 className={cn("whitespace-pre font-heading text-[4.25rem] font-medium leading-[1.3]")}>
+              <h2 className={cn("whitespace-pre font-heading text-[2.25rem] font-medium leading-[1.3]")}>
                 {project.title}
               </h2>
 
@@ -249,11 +249,12 @@ const ProjectsMobileSection = forwardRef<ComponentRef>((_, ref) => {
           <div
             className={cn(
               "lg:static",
-              "absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2",
+              "absolute bottom-[0%] left-1/2 w-full -translate-x-1/2 -translate-y-1/2",
+              "flex justify-center",
               "overflow-hidden"
             )}
           >
-            <h4 className={cn("desc", "max-w-[40ch]", "text-[1.25rem]")}>{project.description}</h4>
+            <h4 className={cn("desc", "w-full max-w-[90%]", " text-center text-[1.25rem]")}>{project.description}</h4>
           </div>
         </div>
       ))}
@@ -316,10 +317,16 @@ const ContactSection = forwardRef<ComponentRef>((_, ref) => {
   const update = () => {
     const contactBounds = containerRef.current?.getBoundingClientRect()
     const contactTop = contactBounds?.top ?? 0
+    const contactBottom = contactBounds?.bottom ?? 0
+
     const contactShowScreenOffset = (Properties.viewportHeight - contactTop) / Properties.viewportHeight
+    const contactHideScreenOffset = -contactBottom / Properties.viewportHeight
 
     if (mobileContainerRef.current) {
-      mobileContainerRef.current.style.pointerEvents = contactShowScreenOffset > 0 ? "auto" : "none"
+      mobileContainerRef.current.style.pointerEvents =
+        contactShowScreenOffset > 0 && contactHideScreenOffset < 0 ? "auto" : "none"
+      mobileContainerRef.current.style.visibility =
+        contactShowScreenOffset > 0 && contactHideScreenOffset < 0 ? "visible" : "hidden"
     }
 
     const showRatio = MathUtils.fit(contactShowScreenOffset, 1.5, 2, 0, 1, Ease.cubicOut)
