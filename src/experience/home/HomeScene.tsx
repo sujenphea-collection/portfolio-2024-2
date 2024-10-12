@@ -1057,7 +1057,7 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     props.show && (
       <group>
         {/* floor */}
-        <mesh geometry={floorGeometryRef.current ?? undefined} userData={{ reflect: false }}>
+        <mesh geometry={floorGeometryRef.current ?? undefined} userData={{ reflect: false }} renderOrder={1}>
           <shaderMaterial
             uniforms={floorUniforms.current}
             vertexShader={stageVert}
