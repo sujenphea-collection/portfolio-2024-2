@@ -69,7 +69,7 @@ void main() {
   vec4 reflection = texture2DProj(u_texture, uvOffset);
 
   // add reflection + noise
-  color += mix(vec3(noise) * 0.5, reflection.rgb, 0.4);
+  color += mix(vec3(noise) * 0.8, reflection.rgb, 0.4);
 
   // get stage light alpha
   vec2 stageLightUV = (v_uv2 - 0.5) * u_scale + 0.5;
@@ -91,7 +91,7 @@ void main() {
 
   // - add stage light
   float stageLightRatio = stageLightAlpha * xRatio * yLeftRatio + stageLightAlpha * xRatio * yRightRatio;
-  color += u_stageLightColor * stageLightRatio;
+  color += u_stageLightColor * stageLightRatio * 10.0;
 
   // fog
   float fogDepth = v_pos.z - 3.0;
