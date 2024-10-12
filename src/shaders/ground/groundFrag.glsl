@@ -2,6 +2,7 @@ uniform mat3 normalMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 modelViewMatrix;
 
+uniform float u_time;
 uniform vec3 u_color;
 uniform sampler2D u_texture;
 uniform sampler2D u_shadowTexture;
@@ -63,7 +64,7 @@ void main() {
 
   // get reflection
   vec4 uvOffset = v_uv;
-  uvOffset.x = uvOffset.x + uvOffset.x * (noise * 6.0 - 3.0) * 0.005;
+  uvOffset.x = uvOffset.x + uvOffset.x * (noise * 6.0 - 3.0) * 0.005 + (uvOffset.x * (sin(noise * u_time) - 0.5) * 0.005);
 
   vec4 reflection = texture2DProj(u_texture, uvOffset);
 

@@ -461,6 +461,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const groundMesh = useRef<Mesh | null>(null)
 
   const groundUniforms = useRef({
+    u_time: { value: 0 },
     u_color: { value: new Color(0xffffff) },
     u_texture: { value: renderTarget.current.texture },
     u_textureMatrix: { value: reflectorParams.current.textureMatrix },
@@ -485,7 +486,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
   const prevColor = useRef(new Color())
 
   /* ---------------------------------- tick ---------------------------------- */
-  useFrame(() => {
+  useFrame((_, delta) => {
     // mix ratio
     let ratio = 0
     let index = 0
@@ -510,6 +511,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     )
 
     groundUniforms.current.u_stageLightRatio.value = params.current.opacity * (lightHideRatio + lightShowRatio)
+    groundUniforms.current.u_time.value += delta
 
     // set stage color
     const prevIndex = index - 1
