@@ -47,26 +47,28 @@ void main() {
   vec3 color = vec3(0.0);
   float alpha = 1.0;
 
-  float noise = texture2D(u_maskTexture, v_uv2).g;
+  float noiseUvRepeat = 8.0;
+  float noise = texture2D(u_maskTexture, v_uv2 * noiseUvRepeat).g;
 
   // add light
   vec3 light = vec3(0.0);
 
   vec3 viewDirection = normalize(v_pos - cameraPosition);
-  vec3 lightPos = vec3(0.0, 3.0, 1.0);
+  vec3 lightPos = vec3(0.0, 2.0, 1.0);
   vec3 lightColor = vec3(0.8, 0.8, 1.0);
-  float lightIntensity = 0.3;
-  light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 20.0, 0.0, 0.0);
+  float lightIntensity = 0.8;
+  light += lightPoint(v_pos, v_normal, viewDirection, lightPos, lightColor, lightIntensity, 3.0, 1.0, 1.0);
 
   color += light * (clamp(u_stageLightRatio, 0.4, 1.0));
 
   // get reflection
-  vec4 uvOffset = vec4(noise * 0.2, 0.0, 0.0, noise * 0.2);
-  vec4 reflection = texture2DProj(u_texture, v_uv + uvOffset);
-  color += reflection.rgb * uReflect;
+  vec4 uvOffset = v_uv;
+  uvOffset.x = uvOffset.x + uvOffset.x * (noise * 6.0 - 3.0) * 0.005;
 
-  // add noise
-  color *= crange(1.0 - (noise * 4.0), 0.0, 1.0, 0.0, 0.8);
+  vec4 reflection = texture2DProj(u_texture, uvOffset);
+
+  // add reflection + noise
+  color += mix(vec3(noise) * 0.5, reflection.rgb, 0.4);
 
   // get stage light alpha
   vec2 stageLightUV = (v_uv2 - 0.5) * u_scale + 0.5;
@@ -90,10 +92,15 @@ void main() {
   float stageLightRatio = stageLightAlpha * xRatio * yLeftRatio + stageLightAlpha * xRatio * yRightRatio;
   color += u_stageLightColor * stageLightRatio;
 
+  // fog
+  float fogDepth = v_pos.z - 3.0;
+  float fogDensity = 0.08;
+  float fogFactor = exp(-fogDensity * fogDensity * fogDepth * fogDepth);
+  alpha = (1.0 - pow(fogFactor, 4.0)) * fogFactor;
+
   // apply color
   gl_FragColor = vec4(color, alpha);
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
-  #include <fog_fragment>
 }

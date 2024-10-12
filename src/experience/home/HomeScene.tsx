@@ -547,7 +547,7 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
       },
     })
 
-    loader.add("/textures/floor.png", ItemType.Texture, {
+    loader.add("/textures/floor.jpg", ItemType.Texture, {
       onLoad: (_tex) => {
         const tex = _tex as Texture
         tex.flipY = true
@@ -744,7 +744,12 @@ const Ground = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
           scale={[3, 3, 3]}
         >
           <planeGeometry args={[12, 12]} />
-          <shaderMaterial uniforms={groundUniforms.current} vertexShader={groundVert} fragmentShader={groundFrag} fog />
+          <shaderMaterial
+            uniforms={groundUniforms.current}
+            vertexShader={groundVert}
+            fragmentShader={groundFrag}
+            transparent
+          />
         </mesh>
       </group>
     )
@@ -1641,7 +1646,7 @@ export const HomeExperience = forwardRef<SceneHandle, HomeExperienceProps>((prop
       <Contact ref={contactRef} show={props.show} raycast={raycast} />
 
       <fog args={[0x000000, 15, 25]} attach="fog" />
-      <color attach="background" args={[0x000000]} />
+      <color attach="background" args={[0x4d4d4d]} />
     </>,
     scene.current
   )
