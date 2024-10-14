@@ -895,11 +895,11 @@ const Stage = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
         </mesh>
 
         {/* screen */}
-        <mesh ref={screenLeftMeshRef} geometry={screenLeftGeometryRef.current ?? undefined} renderOrder={1}>
+        <mesh ref={screenLeftMeshRef} geometry={screenLeftGeometryRef.current ?? undefined} renderOrder={11}>
           <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
 
-        <mesh ref={screenRightMeshRef} geometry={screenRightGeometryRef.current ?? undefined} renderOrder={1}>
+        <mesh ref={screenRightMeshRef} geometry={screenRightGeometryRef.current ?? undefined} renderOrder={11}>
           <shaderMaterial uniforms={screenUniforms.current} vertexShader={screenVert} fragmentShader={screenFrag} />
         </mesh>
 
