@@ -1114,7 +1114,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
     props.show && (
       <group>
         <group ref={xLogoMeshRef} position={[0, 0.35, -4]}>
-          <mesh geometry={xLogoGeometryRef.current}>
+          <mesh geometry={xLogoGeometryRef.current} renderOrder={1}>
             <shaderMaterial
               uniforms={xLogoUniformsRef.current}
               vertexShader={logoVert}
@@ -1149,7 +1149,7 @@ const Contact = forwardRef<ExperienceRef, ExperienceProps>((props, ref) => {
         </group>
 
         <group ref={githubLogoMeshRef} position={[0, 0.35, -4]}>
-          <mesh geometry={githubLogoGeometryRef.current}>
+          <mesh geometry={githubLogoGeometryRef.current} renderOrder={1}>
             <shaderMaterial
               uniforms={githubLogoUniformsRef.current}
               vertexShader={logoVert}
